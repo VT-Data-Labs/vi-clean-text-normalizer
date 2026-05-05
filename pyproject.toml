@@ -23,7 +23,7 @@ dev = [
 corrector = "vn_corrector.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/VT-Labs/vi-clean-text-normalizer"
+Homepage = "https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer"
 
 [build-system]
 requires = ["hatchling"]

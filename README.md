@@ -3,11 +3,11 @@
 > Vietnamese OCR post-correction engine — conservative, explainable, and safe.
 
 [![Python versions](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
-[![CI](https://github.com/VT-Labs/vi-clean-text-normalizer/actions/workflows/ci.yml/badge.svg)](https://github.com/VT-Labs/vi-clean-text-normalizer/actions/workflows/ci.yml)
+[![CI](https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer/actions/workflows/ci.yml/badge.svg)](https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-pytest-blue.svg)](#testing)
 [![Lint](https://img.shields.io/badge/lint-ruff-purple.svg)](#code-quality)
 [![Type Checked](https://img.shields.io/badge/type--checked-mypy-blue.svg)](#code-quality)
-[![License](https://img.shields.io/github/license/VT-Labs/vi-clean-text-normalizer.svg)](LICENSE)
+[![License](https://img.shields.io/github/license/Vi-Lang-Foundation/vi-clean-text-normalizer.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-alpha-orange.svg)](#project-status)
 
 ---
