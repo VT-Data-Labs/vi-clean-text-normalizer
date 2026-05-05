@@ -74,7 +74,7 @@ Primary use cases:
 ### From source
 
 ```bash
-git clone https://github.com/dev-workstation/vi-clean-text-normalizer.git
+git clone https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer.git
 cd vi-clean-text-normalizer
 uv sync
 ```
