@@ -14,3 +14,6 @@ build/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Build artifacts
+resources/lexicons/lexicon_package.json
