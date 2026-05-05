@@ -17,6 +17,9 @@ dev = [
     "black>=25",
 ]
 
+[project.scripts]
+corrector = "vn_corrector.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/dev-workstation/vi-clean-text-normalizer"
 
