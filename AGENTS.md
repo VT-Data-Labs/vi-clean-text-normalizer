@@ -6,13 +6,52 @@ Read `PROJECT.md` before making changes. If your implementation conflicts with `
 
 ## Coding rules
 
-- Prefer modifying existing modules over creating new ones.
+- **DRY — Do Not Repeat Yourself.** Build a single canonical implementation in a generic module, then import it everywhere. Never copy-paste logic across files.
 - Search for existing constants, helpers, validators, and types before adding new ones.
+- **If a function exists in `stage1_normalize/` or `common/`, import it — do not reimplement.**
+- Prefer modifying existing modules over creating new ones.
+
+### Shared module locations
+
+| Concern | Canonical location |
+|---|---|
+| Vietnamese char normalization (strip_accents, fix_lookalikes, normalize_text, normalize_key) | `src/vn_corrector/stage1_normalize/char_normalizer.py` |
+| Stage 1 pipeline (full text normalization) | `src/vn_corrector/stage1_normalize/engine.py` |
+| Shared constants | `src/vn_corrector/common/constants.py` |
+| Shared errors | `src/vn_corrector/common/errors.py` |
+| Shared type definitions | `src/vn_corrector/common/types.py` |
+| Shared validation helpers | `src/vn_corrector/common/validation.py` |
+
+### Vietnamese character normalization — single source of truth
+
+All Vietnamese accent stripping, Unicode lookalike fixing, and text normalisation **must** live exclusively in
+`src/vn_corrector/stage1_normalize/char_normalizer.py`.
+
+Functions available (import from ``vn_corrector.stage1_normalize``):
+
+- ``strip_accents()`` — lowercase + strip tone marks
+- ``strip_accents_preserve_case()`` — strip tone marks, keep casing
+- ``to_no_tone_key()`` — stable no-tone lookup key
+- ``fix_lookalikes()`` — correct Icelandic eth → đ, o-breve → ơ, curly quotes, etc.
+- ``normalize_text()`` — NFC + fix_lookalikes + lowercase + collapse whitespace
+- ``normalize_key()`` — canonical lexicon key (accentless + whitespace-collapsed)
+- ``VIETNAMESE_ACCENT_MAP`` — codepoint → base letter dict
+
+**Rule:** Any module that needs to strip accents, normalise Vietnamese text, or
+generate no-tone keys **must import** from ``vn_corrector.stage1_normalize``.
+Standalone copies of these functions are forbidden.
+
+Backward-compat shims exist at ``vn_corrector.stage2_lexicon.core.accent_stripper``
+and ``stage2_lexicon.core.normalize`` for migration. New code **must not** use them.
+
+### General DRY rules
+
 - Shared constants belong in `src/vn_corrector/common/constants.py`.
 - Shared errors belong in `src/vn_corrector/common/errors.py`.
 - Shared type definitions belong in `src/vn_corrector/common/types.py`.
 - Shared validation helpers belong in `src/vn_corrector/common/validation.py`.
-- Avoid duplicated logic. Code duplication longer than 5 lines is not allowed without justification.
+- **Code duplication longer than 5 lines is not allowed** without justification in a comment.
+- **Scripts in `scripts/` must import from `src/`** — standalone copies of core logic in scripts are forbidden.
 - Do not weaken tests to make them pass.
 - Do not remove error handling or validation unless explicitly required.
 - Keep diffs small and reviewable.
