@@ -42,6 +42,10 @@ Before final response, summarize:
 - remaining risks
 - suggested follow-up refactors
 
+## Committing
+
+Do not add co-author lines to commits. Commit messages must be plain (no generated trailers).
+
 ---
 
 <!-- gitnexus:start -->
