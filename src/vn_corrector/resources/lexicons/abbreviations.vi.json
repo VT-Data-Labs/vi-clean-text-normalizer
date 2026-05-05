@@ -1,0 +1,20 @@
+[
+  {"abbreviation": "2pn", "normalized": "2pn", "expansions": ["2 phòng ngủ"], "tags": ["real_estate"]},
+  {"abbreviation": "3pn", "normalized": "3pn", "expansions": ["3 phòng ngủ"], "tags": ["real_estate"]},
+  {"abbreviation": "dt", "normalized": "dt", "expansions": ["diện tích", "đường trước"], "tags": ["real_estate"], "ambiguous": true},
+  {"abbreviation": "shr", "normalized": "shr", "expansions": ["sổ hồng riêng"], "tags": ["real_estate"]},
+  {"abbreviation": "cc", "normalized": "cc", "expansions": ["chung cư"], "tags": ["real_estate"]},
+  {"abbreviation": "q.", "normalized": "q.", "expansions": ["quận"], "tags": ["address"]},
+  {"abbreviation": "p.", "normalized": "p.", "expansions": ["phường"], "tags": ["address"]},
+  {"abbreviation": "tp", "normalized": "tp", "expansions": ["thành phố"], "tags": ["address"]},
+  {"abbreviation": "tx", "normalized": "tx", "expansions": ["thị xã"], "tags": ["address"]},
+  {"abbreviation": "h.", "normalized": "h.", "expansions": ["huyện"], "tags": ["address"]},
+  {"abbreviation": "x.", "normalized": "x.", "expansions": ["xã"], "tags": ["address"]},
+  {"abbreviation": "đt", "normalized": "dt", "expansions": ["điện thoại", "đường trước", "diện tích"], "tags": ["general"], "ambiguous": true},
+  {"abbreviation": "st", "normalized": "st", "expansions": ["số thứ tự"], "tags": ["general"]},
+  {"abbreviation": "nv", "normalized": "nv", "expansions": ["nhân viên"], "tags": ["general"]},
+  {"abbreviation": "tn", "normalized": "tn", "expansions": ["thu nhập", "trách nhiệm"], "tags": ["general"], "ambiguous": true},
+  {"abbreviation": "tm", "normalized": "tm", "expansions": ["thương mại"], "tags": ["general"]},
+  {"abbreviation": "gd", "normalized": "gd", "expansions": ["gia đình", "giám đốc"], "tags": ["general"], "ambiguous": true},
+  {"abbreviation": "sđt", "normalized": "sdt", "expansions": ["số điện thoại"], "tags": ["general"]}
+]

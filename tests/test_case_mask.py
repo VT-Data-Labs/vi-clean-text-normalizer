@@ -8,7 +8,7 @@ from vn_corrector.case_mask import (
     to_lowercase,
     to_uppercase,
 )
-from vn_corrector.common.errors import CasePattern
+from vn_corrector.common.types import CasePattern
 
 
 class TestDetectCasePattern:

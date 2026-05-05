@@ -8,8 +8,7 @@ Responsibilities:
 - Handle Vietnamese uppercase/lowercase correctly, including Đ/đ.
 """
 
-from vn_corrector.common.errors import CasePattern
-from vn_corrector.common.types import CaseMask
+from vn_corrector.common.types import CaseMask, CasePattern
 
 # Vietnamese uppercase/lowercase is handled by Python's str.upper()/str.lower()
 # which correctly maps:

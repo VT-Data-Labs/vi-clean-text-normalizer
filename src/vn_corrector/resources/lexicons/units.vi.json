@@ -1,0 +1,22 @@
+[
+  {"surface": "m", "normalized": "m", "type": "length", "freq": 0.95, "domain": "measurement"},
+  {"surface": "cm", "normalized": "cm", "type": "length", "freq": 0.90, "domain": "measurement"},
+  {"surface": "mm", "normalized": "mm", "type": "length", "freq": 0.85, "domain": "measurement"},
+  {"surface": "km", "normalized": "km", "type": "length", "freq": 0.80, "domain": "measurement"},
+  {"surface": "m2", "normalized": "m2", "type": "area", "freq": 0.70, "domain": "measurement"},
+  {"surface": "m²", "normalized": "m2", "type": "area", "freq": 0.50, "domain": "measurement"},
+  {"surface": "m3", "normalized": "m3", "type": "volume", "freq": 0.60, "domain": "measurement"},
+  {"surface": "g", "normalized": "g", "type": "weight", "freq": 0.90, "domain": "measurement"},
+  {"surface": "kg", "normalized": "kg", "type": "weight", "freq": 0.95, "domain": "measurement"},
+  {"surface": "ml", "normalized": "ml", "type": "volume", "freq": 0.90, "domain": "measurement"},
+  {"surface": "l", "normalized": "l", "type": "volume", "freq": 0.85, "domain": "measurement"},
+  {"surface": "mg", "normalized": "mg", "type": "weight", "freq": 0.80, "domain": "measurement"},
+  {"surface": "°C", "normalized": "°c", "type": "temperature", "freq": 0.85, "domain": "measurement"},
+  {"surface": "%", "normalized": "%", "type": "percentage", "freq": 0.95, "domain": "measurement"},
+  {"surface": "ha", "normalized": "ha", "type": "area", "freq": 0.65, "domain": "measurement"},
+  {"surface": "kWh", "normalized": "kwh", "type": "energy", "freq": 0.60, "domain": "measurement"},
+  {"surface": "V", "normalized": "v", "type": "voltage", "freq": 0.70, "domain": "measurement"},
+  {"surface": "A", "normalized": "a", "type": "current", "freq": 0.65, "domain": "measurement"},
+  {"surface": "W", "normalized": "w", "type": "power", "freq": 0.65, "domain": "measurement"},
+  {"surface": "Hz", "normalized": "hz", "type": "frequency", "freq": 0.55, "domain": "measurement"}
+]

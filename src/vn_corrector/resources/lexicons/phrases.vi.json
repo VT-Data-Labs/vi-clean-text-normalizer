@@ -1,0 +1,16 @@
+[
+  {"phrase": "số muỗng gạt ngang", "normalized": "so muong gat ngang", "n": 3, "freq": 0.90, "domain": "product_instruction"},
+  {"phrase": "làm nguội nhanh", "normalized": "lam nguoi nhanh", "n": 3, "freq": 0.85, "domain": "product_instruction"},
+  {"phrase": "rót nước vào", "normalized": "rot nuoc vao", "n": 3, "freq": 0.80, "domain": "general"},
+  {"phrase": "dụng cụ pha chế", "normalized": "dung cu pha che", "n": 4, "freq": 0.82, "domain": "product_instruction"},
+  {"phrase": "kiểm tra nhiệt độ", "normalized": "kiem tra nhiet do", "n": 3, "freq": 0.85, "domain": "general"},
+  {"phrase": "vừa đủ", "normalized": "vua du", "n": 2, "freq": 0.80, "domain": "general"},
+  {"phrase": "hướng dẫn sử dụng", "normalized": "huong dan su dung", "n": 3, "freq": 0.90, "domain": "general"},
+  {"phrase": "pha chế theo lượng", "normalized": "pha che theo luong", "n": 4, "freq": 0.78, "domain": "product_instruction"},
+  {"phrase": "nước ở nhiệt độ", "normalized": "nuoc o nhiet do", "n": 3, "freq": 0.75, "domain": "general"},
+  {"phrase": "sổ hồng riêng", "normalized": "so hong rieng", "n": 2, "freq": 0.80, "domain": "real_estate"},
+  {"phrase": "rót nước", "normalized": "rot nuoc", "n": 2, "freq": 0.85, "domain": "general"},
+  {"phrase": "làm nguội", "normalized": "lam nguoi", "n": 2, "freq": 0.82, "domain": "product_instruction"},
+  {"phrase": "theo lượng", "normalized": "theo luong", "n": 2, "freq": 0.75, "domain": "product_instruction"},
+  {"phrase": "nhà vệ sinh", "normalized": "nha ve sinh", "n": 3, "freq": 0.70, "domain": "real_estate"}
+]
