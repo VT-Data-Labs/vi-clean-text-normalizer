@@ -6,6 +6,43 @@ from vn_corrector.common.errors import CasePattern, DecisionType
 
 
 @dataclass
+class LexiconEntry:
+    """A single lexicon entry (syllable, word, or unit)."""
+
+    surface: str
+    normalized: str
+    no_tone: str = ""
+    kind: str = "word"
+    source: str = "built-in"
+    confidence: float = 1.0
+    frequency: float = 0.0
+    domain: str | None = None
+    tags: list[str] = field(default_factory=list)
+
+
+@dataclass
+class AbbreviationEntry:
+    """A single abbreviation with its expansions."""
+
+    surface: str
+    normalized: str
+    expansions: list[str]
+    source: str = "built-in"
+    confidence: float = 1.0
+    tags: list[str] = field(default_factory=list)
+    domain: str | None = None
+    ambiguous: bool = False
+
+
+@dataclass
+class LexiconLookupResult:
+    """Result of a lexicon lookup."""
+
+    found: bool
+    entries: list[LexiconEntry | AbbreviationEntry] = field(default_factory=list)
+
+
+@dataclass
 class CorrectionChange:
     """A single applied correction."""
 
