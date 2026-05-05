@@ -1,0 +1,7 @@
+name: code
+type: regex
+span_type: code
+priority: 5
+require_ascii: true
+patterns:
+  - "\\d+(?:[''])-(?:[A-Za-z0-9]+(?:\\s*[-/]\\s*[A-Za-z0-9]+)*)"

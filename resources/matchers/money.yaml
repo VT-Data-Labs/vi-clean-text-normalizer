@@ -1,0 +1,7 @@
+name: money
+type: regex
+span_type: money
+priority: 5
+patterns:
+  - "(?:US\\$|€|£|₫|¥|\\$)\\s*\\d+(?:[.,]\\d+)*"
+  - "\\d+(?:[.,]\\d+)*\\s*(?:₫|USD|EUR|GBP|VND|JPY|đồng)"

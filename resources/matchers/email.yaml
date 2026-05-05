@@ -1,0 +1,6 @@
+name: email
+type: regex
+span_type: email
+priority: 7
+patterns:
+  - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"

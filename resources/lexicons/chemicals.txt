@@ -1,0 +1,15 @@
+# Known chemical abbreviations and codes (one per line)
+DHA
+ARA
+LNT
+DNA
+RNA
+ATP
+ADP
+pH
+UV
+IR
+MRI
+CT
+ECG
+EEG

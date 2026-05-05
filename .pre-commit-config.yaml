@@ -11,4 +11,4 @@ repos:
     hooks:
       - id: mypy
         args: [--config-file=pyproject.toml]
-        additional_dependencies: [pytest>=9]
+        additional_dependencies: [pytest>=9, types-PyYAML>=6]

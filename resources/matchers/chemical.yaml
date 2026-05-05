@@ -1,0 +1,6 @@
+name: chemical
+type: lexicon
+span_type: code
+priority: 5
+source: ../lexicons/chemicals.txt
+case_sensitive: true

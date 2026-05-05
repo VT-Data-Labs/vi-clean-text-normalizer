@@ -1,0 +1,6 @@
+name: phone
+type: regex
+span_type: phone
+priority: 6
+patterns:
+  - "(?:\\+?\\d{1,3}[\\s-]?)?\\(?\\d{1,4}\\)?[\\s-]?\\d{1,4}[\\s-]?\\d{3,9}"

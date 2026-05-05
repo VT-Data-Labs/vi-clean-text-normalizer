@@ -1,0 +1,6 @@
+name: number
+type: regex
+span_type: number
+priority: 3
+patterns:
+  - "\\d+(?:[.,]\\d+)*"

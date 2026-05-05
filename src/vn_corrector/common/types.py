@@ -105,6 +105,20 @@ class DecisionType(StrEnum):
     NEED_CONTEXT = "need_context"
 
 
+class SpanType(StrEnum):
+    """Known protected span types."""
+
+    URL = "url"
+    EMAIL = "email"
+    PHONE = "phone"
+    NUMBER = "number"
+    UNIT = "unit"
+    MONEY = "money"
+    PERCENT = "percent"
+    CODE = "code"
+    DATE = "date"
+
+
 # ---------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------
@@ -150,6 +164,39 @@ class Score:
             raise ValueError("confidence must be between 0 and 1")
         if self.frequency < 0:
             raise ValueError("frequency must be >= 0")
+
+
+@dataclass(frozen=True, slots=True)
+class Span:
+    """A detected protected span in the original text.
+
+    Carries type, positional info, and priority for conflict resolution.
+    """
+
+    type: SpanType
+    start: int
+    end: int
+    value: str
+    priority: int
+    source: str
+
+    def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
+        if self.start < 0:
+            raise ValueError("span.start must be >= 0")
+        if self.end <= self.start:
+            raise ValueError("span.end must be > span.start")
+
+
+@dataclass(frozen=True, slots=True)
+class ProtectedDocument:
+    """Result of a protect() pass — the masked text plus full traceability."""
+
+    original_text: str
+    masked_text: str
+    spans: tuple[Span, ...]
+    placeholder_map: dict[str, str]
+    debug_info: dict[str, object] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------

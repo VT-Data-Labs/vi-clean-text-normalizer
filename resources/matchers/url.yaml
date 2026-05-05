@@ -1,0 +1,7 @@
+name: url
+type: regex
+span_type: url
+priority: 7
+patterns:
+  - "https?://[^\\s<>\"'(){}|\\\\^`\\[\\]]+"
+  - "www\\.[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)+(?:/[^\\s<>\"'(){}|\\\\^`\\[\\]]*)?"

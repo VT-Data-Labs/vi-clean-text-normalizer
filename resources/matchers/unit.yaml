@@ -1,0 +1,7 @@
+name: unit
+type: regex
+span_type: unit
+priority: 4
+patterns:
+  - "\\d+(?:[.,]\\d+)?\\s*(?:ml|l|L|mg|g|kg|mcg|µg|cc|oz|lb|mm|cm|m|km|m2|m3|m²|m³|cm2|cm3|mm2|mm3|°[CF]|°C|°F|[CF])\\b"
+  - "\\d+(?:[.,]\\d+)?\\s+(?:giờ|phút|tháng|tuần|ngày|năm|tiếng|lần|ml|mg|kg|g|cm|mm)\\b"

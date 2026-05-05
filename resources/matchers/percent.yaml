@@ -1,0 +1,7 @@
+name: percent
+type: regex
+span_type: percent
+priority: 5
+patterns:
+  - "\\d+(?:[.,]\\d+)?\\s*%"
+  - "\\d+(?:[.,]\\d+)?\\s+phần\\s+trăm"
