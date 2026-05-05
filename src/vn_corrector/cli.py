@@ -14,7 +14,7 @@ from dataclasses import asdict
 from typing import Any, cast
 
 from vn_corrector.common.types import CorrectionResult
-from vn_corrector.lexicon.store import LexiconStore
+from vn_corrector.lexicon.store import LexiconStore, load_json_resource
 
 
 def _build_lexicon_parser(subparsers: Any) -> argparse.ArgumentParser:
@@ -48,14 +48,14 @@ def _run_lexicon(args: argparse.Namespace) -> None:
     if args.lex_subcommand == "info":
         print("Lexicon Statistics")
         print("=" * 40)
-        syllable_count = sum(len(v) for v in store._syllable_index.values())
-        phrase_count = sum(len(v) for v in store._phrase_index.values())
+        syllable_count = store.get_syllable_entry_count()
+        phrase_count = store.get_phrase_count()
         print(f"Syllables:          {syllable_count}")
-        print(f"Words:              {len(store._word_surfaces)}")
+        print(f"Words:              {store.get_word_count()}")
         print(f"Abbreviations:      {store.get_abbreviation_count()}")
         print(f"Phrases:            {phrase_count}")
         print(f"OCR Confusions:     {store.get_ocr_confusion_count()}")
-        print(f"Foreign Words:      {len(store._foreign_words)}")
+        print(f"Foreign Words:      {store.get_foreign_word_count()}")
 
     elif args.lex_subcommand == "lookup":
         word = args.word
@@ -95,7 +95,6 @@ def _run_lexicon(args: argparse.Namespace) -> None:
 
     elif args.lex_subcommand == "validate":
         from vn_corrector.common.validation import validate_lexicon_file
-        from vn_corrector.lexicon.store import _load_json
 
         resources: list[tuple[str, str]] = [
             ("syllables.vi.json", "syllable"),
@@ -108,7 +107,7 @@ def _run_lexicon(args: argparse.Namespace) -> None:
         ]
         all_valid = True
         for filename, ltype in resources:
-            data = _load_json(filename)
+            data = load_json_resource(filename)
             result = validate_lexicon_file(data, ltype)
             status = "PASS" if result.valid else "FAIL"
             print(f"[{status}] {filename}")
