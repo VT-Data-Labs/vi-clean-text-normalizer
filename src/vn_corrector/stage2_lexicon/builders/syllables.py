@@ -16,8 +16,6 @@ A list of dictionaries with keys ``base``, ``forms``, and optionally ``freq``::
 
 from __future__ import annotations
 
-from typing import Any
-
 from vn_corrector.common.types import (
     LexiconEntry,
     LexiconKind,
@@ -29,13 +27,13 @@ from vn_corrector.stage2_lexicon.builders.base import LexiconBuilder
 from vn_corrector.stage2_lexicon.core.types import BuilderInput, BuilderOutput
 
 
-class SyllableBuilder(LexiconBuilder):
+class SyllableBuilder(LexiconBuilder[LexiconEntry]):
     """Builder for syllable entries (base → accented forms)."""
 
     def __init__(self, default_confidence: float = 0.5) -> None:
         self._default_confidence = default_confidence
 
-    def build(self, input_data: BuilderInput) -> BuilderOutput:
+    def build(self, input_data: BuilderInput) -> BuilderOutput[LexiconEntry]:
         """Build :class:`LexiconEntry` objects from syllable data.
 
         Parameters
@@ -46,7 +44,7 @@ class SyllableBuilder(LexiconBuilder):
 
         Returns
         -------
-        BuilderOutput
+        BuilderOutput[LexiconEntry]
             A validated tuple of syllable entries.
         """
         data = input_data.data
@@ -85,12 +83,12 @@ class SyllableBuilder(LexiconBuilder):
                     )
                 )
 
-        return BuilderOutput(
+        return BuilderOutput[LexiconEntry](
             name=input_data.name,
             entries=tuple(entries),
         )
 
-    def validate_output(self, entries: list[Any]) -> list[str]:
+    def validate_output(self, entries: list[LexiconEntry]) -> list[str]:
         """Validate syllable entries.
 
         Checks:

@@ -7,8 +7,6 @@ candidate generation.
 
 from __future__ import annotations
 
-from typing import Any
-
 from vn_corrector.common.types import (
     OcrConfusionEntry,
     Score,
@@ -18,13 +16,13 @@ from vn_corrector.stage2_lexicon.builders.base import LexiconBuilder
 from vn_corrector.stage2_lexicon.core.types import BuilderInput, BuilderOutput
 
 
-class ConfusionBuilder(LexiconBuilder):
+class ConfusionBuilder(LexiconBuilder[OcrConfusionEntry]):
     """Builder for OCR confusion entries."""
 
     def __init__(self, default_confidence: float = 0.7) -> None:
         self._default_confidence = default_confidence
 
-    def build(self, input_data: BuilderInput) -> BuilderOutput:
+    def build(self, input_data: BuilderInput) -> BuilderOutput[OcrConfusionEntry]:
         """Build :class:`OcrConfusionEntry` objects from confusion data.
 
         Parameters
@@ -35,7 +33,7 @@ class ConfusionBuilder(LexiconBuilder):
 
         Returns
         -------
-        BuilderOutput
+        BuilderOutput[OcrConfusionEntry]
             A validated tuple of OCR confusion entries.
         """
         data = input_data.data
@@ -68,12 +66,12 @@ class ConfusionBuilder(LexiconBuilder):
                 )
             )
 
-        return BuilderOutput(
+        return BuilderOutput[OcrConfusionEntry](
             name=input_data.name,
             entries=tuple(entries),
         )
 
-    def validate_output(self, entries: list[Any]) -> list[str]:
+    def validate_output(self, entries: list[OcrConfusionEntry]) -> list[str]:
         """Validate OCR confusion entries.
 
         Checks:

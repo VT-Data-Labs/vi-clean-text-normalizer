@@ -33,6 +33,7 @@ from typing import Any
 from vn_corrector.common.types import (
     AbbreviationEntry,
     LexiconEntry,
+    LexiconRecord,
     LexiconSource,
     OcrConfusionEntry,
     PhraseEntry,
@@ -95,11 +96,13 @@ class BuildPipeline:
         Builder for abbreviation entries.  Defaults to :class:`AbbreviationBuilder`.
     """
 
-    syllable_builder: LexiconBuilder = field(default_factory=SyllableBuilder)
-    word_builder: LexiconBuilder = field(default_factory=WordBuilder)
-    phrase_builder: LexiconBuilder = field(default_factory=PhraseBuilder)
-    confusion_builder: LexiconBuilder = field(default_factory=ConfusionBuilder)
-    abbreviation_builder: LexiconBuilder = field(default_factory=AbbreviationBuilder)
+    syllable_builder: LexiconBuilder[LexiconEntry] = field(default_factory=SyllableBuilder)
+    word_builder: LexiconBuilder[LexiconEntry] = field(default_factory=WordBuilder)
+    phrase_builder: LexiconBuilder[PhraseEntry] = field(default_factory=PhraseBuilder)
+    confusion_builder: LexiconBuilder[OcrConfusionEntry] = field(default_factory=ConfusionBuilder)
+    abbreviation_builder: LexiconBuilder[AbbreviationEntry] = field(
+        default_factory=AbbreviationBuilder
+    )
 
     def run(
         self,
@@ -151,7 +154,7 @@ class BuildPipeline:
         warnings: list[str] = []
 
         # -- Run each builder ----------------------------------------------
-        builder_steps = [
+        builder_steps: list[tuple[str, LexiconBuilder[Any], Any]] = [
             ("syllables", self.syllable_builder, syllable_data),
             ("words", self.word_builder, word_data),
             ("phrases", self.phrase_builder, phrase_data),
@@ -171,7 +174,7 @@ class BuildPipeline:
                     source=source,
                     version=version,
                 )
-                output: BuilderOutput = builder.build(builder_input)
+                output: BuilderOutput[Any] = builder.build(builder_input)
                 entries = list(output.entries)
 
                 # Validate
@@ -224,8 +227,8 @@ class BuildPipeline:
     @staticmethod
     def _validate_builder_output(
         name: str,
-        builder: LexiconBuilder,
-        entries: list[Any],
+        builder: LexiconBuilder[Any],
+        entries: list[LexiconRecord],
     ) -> list[str]:
         """Validate builder output and return error messages."""
         errors: list[str] = []
@@ -275,7 +278,7 @@ class BuildPipeline:
 
     @staticmethod
     def _export_json(
-        entries: list[Any],
+        entries: list[LexiconRecord],
         metadata: LexiconMetadata,
         output_dir: str,
     ) -> str | None:

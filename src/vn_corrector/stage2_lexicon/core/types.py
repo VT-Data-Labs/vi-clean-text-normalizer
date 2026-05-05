@@ -11,7 +11,7 @@ Adds the following to the shared types in ``vn_corrector.common.types``:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TypeVar
 
 from vn_corrector.common.types import (
     LexiconEntry,
@@ -20,6 +20,8 @@ from vn_corrector.common.types import (
     LexiconSource,
     Provenance,
 )
+
+EntryT = TypeVar("EntryT", bound=LexiconRecord)
 
 # ---------------------------------------------------------------------------
 # LexiconIndex — separates raw data from derived indexes
@@ -171,11 +173,15 @@ class BuilderInput:
 
 
 @dataclass(frozen=True)
-class BuilderOutput:
-    """Wrapped output from a :class:`LexiconBuilder`."""
+class BuilderOutput[EntryT]:
+    """Wrapped output from a :class:`LexiconBuilder`.
+
+    Type parameter *E* is the entry type produced by the builder
+    (e.g. ``LexiconEntry``, ``PhraseEntry``, ``OcrConfusionEntry``).
+    """
 
     name: str
-    entries: tuple[LexiconRecord, ...]
+    entries: tuple[EntryT, ...]
     metadata: LexiconMetadata | None = None
 
 

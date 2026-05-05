@@ -7,8 +7,6 @@ phrases like "số muỗng gạt ngang" disambiguate syllable candidates.
 
 from __future__ import annotations
 
-from typing import Any
-
 from vn_corrector.common.types import (
     PhraseEntry,
     Provenance,
@@ -19,13 +17,13 @@ from vn_corrector.stage2_lexicon.builders.base import LexiconBuilder
 from vn_corrector.stage2_lexicon.core.types import BuilderInput, BuilderOutput
 
 
-class PhraseBuilder(LexiconBuilder):
+class PhraseBuilder(LexiconBuilder[PhraseEntry]):
     """Builder for phrase (n-gram) entries."""
 
     def __init__(self, default_freq: float = 0.5) -> None:
         self._default_freq = default_freq
 
-    def build(self, input_data: BuilderInput) -> BuilderOutput:
+    def build(self, input_data: BuilderInput) -> BuilderOutput[PhraseEntry]:
         """Build :class:`PhraseEntry` objects from phrase data.
 
         Parameters
@@ -36,7 +34,7 @@ class PhraseBuilder(LexiconBuilder):
 
         Returns
         -------
-        BuilderOutput
+        BuilderOutput[PhraseEntry]
             A validated tuple of phrase entries.
         """
         data = input_data.data
@@ -76,12 +74,12 @@ class PhraseBuilder(LexiconBuilder):
                 )
             )
 
-        return BuilderOutput(
+        return BuilderOutput[PhraseEntry](
             name=input_data.name,
             entries=tuple(entries),
         )
 
-    def validate_output(self, entries: list[Any]) -> list[str]:
+    def validate_output(self, entries: list[PhraseEntry]) -> list[str]:
         """Validate phrase entries.
 
         Checks:

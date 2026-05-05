@@ -6,8 +6,6 @@ Consumes abbreviation → expansion(s) rules and produces
 
 from __future__ import annotations
 
-from typing import Any
-
 from vn_corrector.common.types import (
     AbbreviationEntry,
     Provenance,
@@ -17,13 +15,13 @@ from vn_corrector.stage2_lexicon.builders.base import LexiconBuilder
 from vn_corrector.stage2_lexicon.core.types import BuilderInput, BuilderOutput
 
 
-class AbbreviationBuilder(LexiconBuilder):
+class AbbreviationBuilder(LexiconBuilder[AbbreviationEntry]):
     """Builder for abbreviation entries."""
 
     def __init__(self, default_confidence: float = 1.0) -> None:
         self._default_confidence = default_confidence
 
-    def build(self, input_data: BuilderInput) -> BuilderOutput:
+    def build(self, input_data: BuilderInput) -> BuilderOutput[AbbreviationEntry]:
         """Build :class:`AbbreviationEntry` objects from abbreviation data.
 
         Parameters
@@ -34,7 +32,7 @@ class AbbreviationBuilder(LexiconBuilder):
 
         Returns
         -------
-        BuilderOutput
+        BuilderOutput[AbbreviationEntry]
             A validated tuple of abbreviation entries.
         """
         data = input_data.data
@@ -75,12 +73,12 @@ class AbbreviationBuilder(LexiconBuilder):
                 )
             )
 
-        return BuilderOutput(
+        return BuilderOutput[AbbreviationEntry](
             name=input_data.name,
             entries=tuple(entries),
         )
 
-    def validate_output(self, entries: list[Any]) -> list[str]:
+    def validate_output(self, entries: list[AbbreviationEntry]) -> list[str]:
         """Validate abbreviation entries.
 
         Checks:

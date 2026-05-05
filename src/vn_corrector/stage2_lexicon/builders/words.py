@@ -7,8 +7,6 @@ domain-specific vocabulary.
 
 from __future__ import annotations
 
-from typing import Any
-
 from vn_corrector.common.types import (
     LexiconEntry,
     LexiconKind,
@@ -20,13 +18,13 @@ from vn_corrector.stage2_lexicon.builders.base import LexiconBuilder
 from vn_corrector.stage2_lexicon.core.types import BuilderInput, BuilderOutput
 
 
-class WordBuilder(LexiconBuilder):
+class WordBuilder(LexiconBuilder[LexiconEntry]):
     """Builder for word/unit lexicon entries."""
 
     def __init__(self, default_freq: float = 1.0) -> None:
         self._default_freq = default_freq
 
-    def build(self, input_data: BuilderInput) -> BuilderOutput:
+    def build(self, input_data: BuilderInput) -> BuilderOutput[LexiconEntry]:
         """Build :class:`LexiconEntry` objects from word data.
 
         Parameters
@@ -37,7 +35,7 @@ class WordBuilder(LexiconBuilder):
 
         Returns
         -------
-        BuilderOutput
+        BuilderOutput[LexiconEntry]
             A validated tuple of word entries.
         """
         data = input_data.data
@@ -74,12 +72,12 @@ class WordBuilder(LexiconBuilder):
                 )
             )
 
-        return BuilderOutput(
+        return BuilderOutput[LexiconEntry](
             name=input_data.name,
             entries=tuple(entries),
         )
 
-    def validate_output(self, entries: list[Any]) -> list[str]:
+    def validate_output(self, entries: list[LexiconEntry]) -> list[str]:
         """Validate word entries.
 
         Checks:
