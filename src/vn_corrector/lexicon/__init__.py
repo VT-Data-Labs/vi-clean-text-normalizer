@@ -17,9 +17,11 @@ __all__ = [
 
 
 def __getattr__(name: str) -> object:
-    """Lazy-import :class:`SqliteLexiconStore` so that the import
-    does not fail on systems without ``sqlite3`` support (extremely
-    rare, but the backend is genuinely optional)."""
+    """Lazy-import :class:`SqliteLexiconStore` on first access.
+
+    This avoids import failures on systems without the ``sqlite3`` module,
+    which is optional but recommended.
+    """
     if name == "SqliteLexiconStore":
         from vn_corrector.lexicon.backends import SqliteLexiconStore
 

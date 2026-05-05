@@ -1,5 +1,4 @@
-"""
-Stage 2 + Stage 8: Case Masking and Restoration.
+"""Stage 2 + Stage 8: Case Masking and Restoration.
 
 Responsibilities:
 - Detect case pattern for each text span (UPPER, LOWER, TITLE, MIXED, UNKNOWN).
@@ -80,6 +79,7 @@ def restore_case(text: str, case_pattern: CasePattern, original: str | None = No
 
     Returns:
         Text with the requested case pattern applied.
+
     """
     if case_pattern == CasePattern.LOWER:
         return to_lowercase(text)
@@ -107,6 +107,7 @@ def create_case_mask(text: str) -> CaseMask:
 
     Returns:
         A CaseMask with original, lowercase working copy, and detected pattern.
+
     """
     case_pattern = detect_case_pattern(text)
     working = to_lowercase(text)
@@ -126,6 +127,7 @@ def apply_case_mask(working_text: str, mask: CaseMask) -> str:
 
     Returns:
         Text with original case pattern restored.
+
     """
     return restore_case(working_text, mask.case_pattern, mask.original)
 

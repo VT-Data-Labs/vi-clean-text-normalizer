@@ -203,6 +203,7 @@ class JsonLexiconStore(LexiconStore):
     """
 
     def __init__(self) -> None:
+        """Initialize an empty lexicon store with all internal indexes."""
         # no-tone key → LexiconEntry (syllables)
         self._syllable_index: dict[str, list[LexiconEntry]] = {}
         # surface form → LexiconEntry (syllables)
@@ -419,6 +420,7 @@ class JsonLexiconStore(LexiconStore):
     # -- Surface / exact lookups -------------------------------------------
 
     def lookup(self, text: str) -> LexiconLookupResult:
+        """Look up *text* by exact surface form across syllables and words."""
         entries: list[LexiconEntry | AbbreviationEntry | PhraseEntry] = []
 
         if text in self._syllable_by_surface:
@@ -434,15 +436,18 @@ class JsonLexiconStore(LexiconStore):
         )
 
     def lookup_syllable(self, text: str) -> list[str]:
+        """Return syllable surfaces matching the no-tone form of *text*."""
         key = strip_accents(text)
         entries = self._syllable_index.get(key, [])
         return [e.surface for e in entries]
 
     def lookup_unit(self, text: str) -> list[LexiconEntry]:
+        """Return unit entries whose surface exactly matches *text*."""
         entries = self._word_by_surface.get(text, [])
         return [e for e in entries if e.kind == LexiconKind.UNIT]
 
     def lookup_abbreviation(self, text: str) -> LexiconLookupResult:
+        """Look up an abbreviation by its surface form."""
         entry = self._abbrev_entries.get(text)
         return LexiconLookupResult(
             query=text,
@@ -451,9 +456,11 @@ class JsonLexiconStore(LexiconStore):
         )
 
     def lookup_phrase(self, text: str) -> list[PhraseEntry]:
+        """Look up phrase entries by exact surface form."""
         return list(self._phrase_surfaces.get(text, []))
 
     def lookup_phrase_str(self, text: str) -> str | None:
+        """Look up a phrase by its no-tone form, return the accented surface or ``None``."""
         key = strip_accents(text)
         entries = self._phrase_index.get(key, [])
         if entries:
@@ -463,6 +470,7 @@ class JsonLexiconStore(LexiconStore):
     # -- Accentless / no-tone lookups --------------------------------------
 
     def lookup_accentless(self, text: str) -> LexiconLookupResult:
+        """Look up *text* by stripped/accentless form (syllables + words)."""
         key = strip_accents(text)
         entries: list[LexiconEntry | AbbreviationEntry | PhraseEntry] = []
 
@@ -479,21 +487,26 @@ class JsonLexiconStore(LexiconStore):
         )
 
     def lookup_no_tone(self, text: str) -> LexiconLookupResult:
+        """Alias for :meth:`lookup_accentless`."""
         return self.lookup_accentless(text)
 
     def lookup_phrase_normalized(self, text: str) -> list[PhraseEntry]:
+        """Look up phrase entries by no-tone (accentless) form."""
         key = strip_accents(text)
         return list(self._phrase_index.get(key, []))
 
     def get_syllable_candidates(self, no_tone_key: str) -> list[LexiconEntry]:
+        """Return all syllable entries matching a no-tone key."""
         return list(self._syllable_index.get(no_tone_key, []))
 
     # -- OCR confusion -----------------------------------------------------
 
     def lookup_ocr(self, noisy: str) -> list[str]:
+        """Return known correction surfaces for a noisy OCR token."""
         return list(self._ocr_confusions.get(noisy, []))
 
     def get_ocr_corrections(self, noisy: str) -> OcrConfusionLookupResult:
+        """Get known corrections for a noisy OCR token as structured result."""
         corrections = self._ocr_confusions.get(noisy)
         if corrections:
             candidates = tuple(
@@ -504,40 +517,51 @@ class JsonLexiconStore(LexiconStore):
         return OcrConfusionLookupResult(query=noisy, found=False)
 
     def get_all_ocr_confusions(self) -> dict[str, list[str]]:
+        """Return the full OCR confusion map (noisy -> correction surfaces)."""
         return dict(self._ocr_confusions)
 
     # -- Membership --------------------------------------------------------
 
     def contains_word(self, text: str) -> bool:
+        """Return ``True`` if *text* is a known word or unit (exact surface)."""
         return text in self._word_surfaces
 
     def contains_syllable(self, text: str) -> bool:
+        """Return ``True`` if *text* is a known syllable (exact surface)."""
         return text in self._syllable_by_surface
 
     def contains_foreign_word(self, text: str) -> bool:
+        """Return ``True`` if *text* is in the foreign-word list."""
         return text in self._foreign_words
 
     # -- Aggregate / statistics --------------------------------------------
 
     def get_abbreviation_entries(self) -> list[AbbreviationEntry]:
+        """Return all abbreviation entries."""
         return list(self._abbrev_entries.values())
 
     def get_abbreviation_count(self) -> int:
+        """Return the number of abbreviation entries."""
         return len(self._abbrev_entries)
 
     def get_phrase_count(self) -> int:
+        """Return the number of unique phrase no-tone keys."""
         return len(self._phrase_index)
 
     def get_ocr_confusion_count(self) -> int:
+        """Return the number of OCR confusion entries."""
         return len(self._ocr_confusions)
 
     def get_syllable_entry_count(self) -> int:
+        """Return the total number of individual syllable entries."""
         return sum(len(v) for v in self._syllable_index.values())
 
     def get_word_count(self) -> int:
+        """Return the number of known word/unit surface forms."""
         return len(self._word_surfaces)
 
     def get_foreign_word_count(self) -> int:
+        """Return the number of foreign-word entries."""
         return len(self._foreign_words)
 
 

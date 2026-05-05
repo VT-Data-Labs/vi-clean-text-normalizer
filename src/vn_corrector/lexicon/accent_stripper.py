@@ -177,6 +177,7 @@ def strip_accents(text: str) -> str:
 
     Returns:
         Lowercase string with all accents stripped to base ASCII letters.
+
     """
     return "".join(_MAP_LOWER.get(ch, ch.lower()) for ch in text)
 
@@ -189,6 +190,7 @@ def strip_accents_preserve_case(text: str) -> str:
 
     Returns:
         String with all accents stripped, keeping original casing.
+
     """
     return "".join(VIETNAMESE_ACCENT_MAP.get(ch, ch) for ch in text)
 
@@ -209,5 +211,6 @@ def to_no_tone_key(text: str) -> str:
         to_no_tone_key("đường") -> "duong"
         to_no_tone_key("ĐƯỜNG") -> "duong"
         to_no_tone_key("Sổ hồng") -> "so hong"
+
     """
     return strip_accents(text)

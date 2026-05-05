@@ -12,6 +12,8 @@ from typing import Any, Literal
 
 
 class LexiconKind(StrEnum):
+    """Known lexicon entry kinds."""
+
     SYLLABLE = "syllable"
     WORD = "word"
     PHRASE = "phrase"
@@ -24,6 +26,8 @@ class LexiconKind(StrEnum):
 
 
 class LexiconSource(StrEnum):
+    """Known lexicon data sources."""
+
     BUILT_IN = "built-in"
     MANUAL = "manual"
     CORPUS = "corpus"
@@ -33,6 +37,8 @@ class LexiconSource(StrEnum):
 
 
 class TokenType(StrEnum):
+    """Known token type classifiers."""
+
     VI_WORD = "VI_WORD"
     FOREIGN_WORD = "FOREIGN_WORD"
     NUMBER = "NUMBER"
@@ -45,6 +51,8 @@ class TokenType(StrEnum):
 
 
 class FlagType(StrEnum):
+    """Known correction flag types."""
+
     UNKNOWN_TOKEN = "unknown_token"
     AMBIGUOUS_CANDIDATES = "ambiguous_candidates"
     LOW_CONFIDENCE = "low_confidence"
@@ -55,6 +63,8 @@ class FlagType(StrEnum):
 
 
 class ChangeReason(StrEnum):
+    """Known reasons for a correction change."""
+
     DIACRITIC_RESTORED = "diacritic_restored"
     OCR_CONFUSION_FIXED = "ocr_confusion_fixed"
     ABBREVIATION_EXPANDED = "abbreviation_expanded"
@@ -65,6 +75,8 @@ class ChangeReason(StrEnum):
 
 
 class CandidateSource(StrEnum):
+    """Known candidate index sources."""
+
     SURFACE_INDEX = "surface_index"
     NO_TONE_INDEX = "no_tone_index"
     PHRASE_INDEX = "phrase_index"
@@ -75,6 +87,8 @@ class CandidateSource(StrEnum):
 
 
 class CasePattern(StrEnum):
+    """Known case patterns for a token."""
+
     LOWER = "lower"
     UPPER = "upper"
     TITLE = "title"
@@ -83,6 +97,8 @@ class CasePattern(StrEnum):
 
 
 class DecisionType(StrEnum):
+    """Known correction decision outcomes."""
+
     ACCEPT = "accept"
     REJECT = "reject"
     FLAG = "flag"
@@ -102,6 +118,7 @@ class TextSpan:
     end: int
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if self.start < 0:
             raise ValueError("span.start must be >= 0")
         if self.end < self.start:
@@ -128,6 +145,7 @@ class Score:
     priority: int = 0
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence must be between 0 and 1")
         if self.frequency < 0:
@@ -141,14 +159,14 @@ class Score:
 
 @dataclass(frozen=True, slots=True)
 class LexiconEntry:
-    """
-    A canonical lexicon entry.
+    """A canonical lexicon entry.
 
     Example:
         surface="muỗng"
         normalized="muỗng"
         no_tone="muong"
         kind=LexiconKind.WORD
+
     """
 
     entry_id: str
@@ -169,6 +187,7 @@ class LexiconEntry:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if not self.entry_id:
             raise ValueError("entry_id is required")
         if not self.surface:
@@ -182,12 +201,12 @@ class LexiconEntry:
 
 @dataclass(frozen=True, slots=True)
 class AbbreviationEntry:
-    """
-    Abbreviation entry.
+    """Abbreviation entry.
 
     Example:
         surface="q."
         expansions=("quận",)
+
     """
 
     entry_id: str
@@ -204,6 +223,7 @@ class AbbreviationEntry:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if not self.entry_id:
             raise ValueError("entry_id is required")
         if not self.surface:
@@ -217,13 +237,13 @@ class AbbreviationEntry:
 
 @dataclass(frozen=True, slots=True)
 class PhraseEntry:
-    """
-    Multi-token phrase entry.
+    """Multi-token phrase entry.
 
     Example:
         phrase="số muỗng"
         no_tone="so muong"
         n=2
+
     """
 
     entry_id: str
@@ -241,6 +261,7 @@ class PhraseEntry:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if not self.entry_id:
             raise ValueError("entry_id is required")
         if not self.phrase:
@@ -256,12 +277,12 @@ class PhraseEntry:
 
 @dataclass(frozen=True, slots=True)
 class OcrConfusionEntry:
-    """
-    OCR confusion mapping.
+    """OCR confusion mapping.
 
     Example:
         noisy="mùông"
         corrections=("muỗng",)
+
     """
 
     entry_id: str
@@ -277,6 +298,7 @@ class OcrConfusionEntry:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if not self.entry_id:
             raise ValueError("entry_id is required")
         if not self.noisy:
@@ -308,6 +330,7 @@ class Candidate:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if not self.text:
             raise ValueError("candidate.text is required")
         if not 0.0 <= self.score <= 1.0:
@@ -373,6 +396,7 @@ class Token:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if self.text == "":
             raise ValueError("token.text must not be empty")
         self.span.validate()
@@ -398,6 +422,7 @@ class CorrectionDecision:
     candidate_sources: tuple[CandidateSource, ...] = field(default_factory=tuple)
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if not 0.0 <= self.best_score <= 1.0:
             raise ValueError("best_score must be between 0 and 1")
         if not 0.0 <= self.second_score <= 1.0:
@@ -417,6 +442,7 @@ class CorrectionChange:
     candidate_sources: tuple[CandidateSource, ...] = field(default_factory=tuple)
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if self.original == "":
             raise ValueError("original must not be empty")
         if self.replacement == "":
@@ -438,6 +464,7 @@ class CorrectionFlag:
     severity: Literal["info", "warning", "error"] = "warning"
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if self.span_text == "":
             raise ValueError("span_text must not be empty")
         self.span.validate()
@@ -455,5 +482,6 @@ class CorrectionResult:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def validate(self) -> None:
+        """Validate field constraints, raising ValueError on invalid state."""
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence must be between 0 and 1")

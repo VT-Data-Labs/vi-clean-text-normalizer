@@ -1,5 +1,6 @@
 """Input validation helpers."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -24,6 +25,73 @@ class ValidationResult:
     errors: list[str] = field(default_factory=list)
 
 
+def _check_syllable_base(entry: dict[str, Any], errors: list[str]) -> str | None:
+    """Validate 'base' field, returning the base value or None."""
+    if "base" not in entry:
+        errors.append("Missing required field 'base'")
+        return None
+    if not is_nonempty_string(entry.get("base")):
+        errors.append("'base' must be a non-empty string")
+        return None
+    return str(entry["base"])
+
+
+def _check_syllable_forms(
+    entry: dict[str, Any], base: str | None, errors: list[str]
+) -> list[str] | None:
+    """Validate 'forms' field, returning the forms list or None."""
+    if "forms" not in entry:
+        errors.append("Missing required field 'forms'")
+        return None
+    if not isinstance(entry.get("forms"), list) or len(entry["forms"]) == 0:
+        errors.append("'forms' must be a non-empty list")
+        return None
+    forms: list[str] = [str(f) for f in entry["forms"]]
+    if base is not None:
+        for form in forms:
+            stripped = strip_accents(form)
+            if stripped != base:
+                errors.append(f"Form {form!r} strips to {stripped!r}, expected base {base!r}")
+    return forms
+
+
+def _check_syllable_freq(entry: dict[str, Any], errors: list[str]) -> None:
+    """Validate 'freq' field values."""
+    if "freq" not in entry or entry["freq"] is None:
+        return
+    freq = entry["freq"]
+    if not isinstance(freq, dict):
+        errors.append("'freq' must be a dict")
+        return
+    for form, fval in freq.items():
+        if not isinstance(fval, (int, float)) or not (0.0 <= fval <= 1.0):
+            errors.append(f"Frequency for '{form}' must be between 0 and 1, got {fval}")
+
+
+def _check_syllable_freq_coverage(
+    entry: dict[str, Any], forms: list[str] | None, errors: list[str]
+) -> None:
+    """Check that all forms have a frequency score if 'freq' is provided."""
+    freq = entry.get("freq")
+    if not isinstance(freq, dict) or forms is None:
+        return
+    for form in forms:
+        if freq.get(str(form)) is None:
+            errors.append(f"Form {form!r} has no frequency score in 'freq' map")
+
+
+def _check_syllable_duplicates(entry: dict[str, Any], errors: list[str]) -> None:
+    """Check for duplicate forms in an entry."""
+    forms = entry.get("forms")
+    if not isinstance(forms, list):
+        return
+    seen = set()
+    for form in forms:
+        if form in seen:
+            errors.append(f"Duplicate form '{form}' in same entry")
+        seen.add(form)
+
+
 def validate_syllable_entry(entry: dict[str, Any]) -> ValidationResult:
     """Validate a single syllable entry in grouped format (base/forms/freq).
 
@@ -35,52 +103,11 @@ def validate_syllable_entry(entry: dict[str, Any]) -> ValidationResult:
     - All frequencies must be in [0, 1]
     """
     errors: list[str] = []
-    base: str | None = None
-
-    if "base" not in entry:
-        errors.append("Missing required field 'base'")
-    elif not is_nonempty_string(entry.get("base")):
-        errors.append("'base' must be a non-empty string")
-    else:
-        base = str(entry["base"])
-
-    if "forms" not in entry:
-        errors.append("Missing required field 'forms'")
-    elif not isinstance(entry.get("forms"), list) or len(entry["forms"]) == 0:
-        errors.append("'forms' must be a non-empty list")
-    elif base is not None:
-        forms: list[str] = [str(f) for f in entry["forms"]]
-        for form in forms:
-            stripped = strip_accents(form)
-            if stripped != base:
-                errors.append(f"Form {form!r} strips to {stripped!r}, expected base {base!r}")
-
-    if "freq" in entry and entry["freq"] is not None:
-        freq = entry["freq"]
-        if not isinstance(freq, dict):
-            errors.append("'freq' must be a dict")
-        else:
-            for form, fval in freq.items():
-                if not isinstance(fval, (int, float)) or not (0.0 <= fval <= 1.0):
-                    errors.append(f"Frequency for '{form}' must be between 0 and 1, got {fval}")
-
-    # If freq is provided, all forms must have a score
-    if "freq" in entry and isinstance(entry.get("freq"), dict) and "forms" in entry:
-        freq = entry["freq"]
-        forms = entry["forms"]
-        if isinstance(forms, list) and isinstance(freq, dict):
-            for form in forms:
-                fval = freq.get(str(form))
-                if fval is None:
-                    errors.append(f"Form {form!r} has no frequency score in 'freq' map")
-
-    if "forms" in entry and isinstance(entry.get("forms"), list):
-        seen = set()
-        for form in entry["forms"]:
-            if form in seen:
-                errors.append(f"Duplicate form '{form}' in same entry")
-            seen.add(form)
-
+    base = _check_syllable_base(entry, errors)
+    forms = _check_syllable_forms(entry, base, errors)
+    _check_syllable_freq(entry, errors)
+    _check_syllable_freq_coverage(entry, forms, errors)
+    _check_syllable_duplicates(entry, errors)
     return ValidationResult(valid=len(errors) == 0, errors=errors)
 
 
@@ -179,6 +206,19 @@ def validate_ocr_confusion_entry(entry: dict[str, Any]) -> ValidationResult:
     return ValidationResult(valid=len(errors) == 0, errors=errors)
 
 
+def _select_validator(lexicon_type: str) -> Callable[[dict[str, Any]], ValidationResult] | None:
+    """Return the validator function for the given lexicon type."""
+    validators: dict[str, Callable[[dict[str, Any]], ValidationResult]] = {
+        "syllable": validate_syllable_entry,
+        "word": validate_word_entry,
+        "unit": validate_word_entry,
+        "abbreviation": validate_abbreviation_entry,
+        "phrase": validate_phrase_entry,
+        "ocr_confusion": validate_ocr_confusion_entry,
+    }
+    return validators.get(lexicon_type)
+
+
 def validate_lexicon_file(data: list[Any] | dict[str, Any], lexicon_type: str) -> ValidationResult:
     """Validate an entire lexicon JSON file.
 
@@ -188,6 +228,7 @@ def validate_lexicon_file(data: list[Any] | dict[str, Any], lexicon_type: str) -
 
     Returns:
         A ValidationResult with any errors found.
+
     """
     if not isinstance(data, list):
         return ValidationResult(valid=False, errors=["Lexicon data must be a list"])
@@ -201,17 +242,8 @@ def validate_lexicon_file(data: list[Any] | dict[str, Any], lexicon_type: str) -
                 )
         return ValidationResult(valid=True)
 
-    if lexicon_type == "syllable":
-        validator = validate_syllable_entry
-    elif lexicon_type in ("word", "unit"):
-        validator = validate_word_entry
-    elif lexicon_type == "abbreviation":
-        validator = validate_abbreviation_entry
-    elif lexicon_type == "phrase":
-        validator = validate_phrase_entry
-    elif lexicon_type == "ocr_confusion":
-        validator = validate_ocr_confusion_entry
-    else:
+    validator = _select_validator(lexicon_type)
+    if validator is None:
         return ValidationResult(valid=False, errors=[f"Unknown lexicon type: {lexicon_type}"])
 
     all_errors: list[str] = []

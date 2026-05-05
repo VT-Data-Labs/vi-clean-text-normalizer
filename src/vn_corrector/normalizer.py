@@ -1,5 +1,4 @@
-"""
-Stage 0 + Stage 1: Input Normalization and Unicode Normalization.
+"""Stage 0 + Stage 1: Input Normalization and Unicode Normalization.
 
 Responsibilities:
 - Normalize Unicode to NFC.
@@ -57,15 +56,16 @@ def normalize_unicode(text: str) -> str:
     Examples:
         'n̂' (n + combining circumflex) → 'n'  (not canonical)
         Actually NFC ensures canonical compositions are used.
+
     """
     return unicodedata.normalize("NFC", text)
 
 
 def remove_invisible_characters(text: str) -> str:
-    """Remove invisible and non-printing control characters.
+    r"""Remove invisible and non-printing control characters.
 
     Preserves:
-    - \\n (newline), \\r (carriage return), \\t (tab)
+    - \n (newline), \r (carriage return), \t (tab)
     - Printable characters including Vietnamese letters
     - Normal punctuation and symbols
     """
@@ -73,15 +73,16 @@ def remove_invisible_characters(text: str) -> str:
 
 
 def normalize_whitespace(text: str) -> str:
-    """Normalize whitespace while preserving intentional newlines.
+    r"""Normalize whitespace while preserving intentional newlines.
 
     - Converts non-standard spaces (NBSP, thin space, etc.) to regular space.
-    - Normalizes line endings: \\r\\n → \\n, standalone \\r → \\n.
+    - Normalizes line endings: \r\n → \n, standalone \r → \n.
     - Does NOT collapse multiple spaces (preserves formatting).
     - Does NOT trim leading/trailing whitespace.
 
     Returns:
         Text with normalized line endings and standard spaces.
+
     """
     # Normalize line endings
     text = text.replace("\r\n", "\n")

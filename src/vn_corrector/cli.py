@@ -1,5 +1,4 @@
-"""
-CLI for testing Vietnamese OCR corrections.
+"""CLI for testing Vietnamese OCR corrections.
 
 Usage:
   uv run corrector "SỐ MÙÔNG (GẠT NGANG)"
@@ -41,89 +40,105 @@ def _build_lexicon_parser(subparsers: Any) -> argparse.ArgumentParser:
     return cast(argparse.ArgumentParser, lex_parser)
 
 
+def _lexicon_info(store: LexiconStore) -> None:
+    """Print lexicon statistics."""
+    print("Lexicon Statistics")
+    print("=" * 40)
+    print(f"Syllables:          {store.get_syllable_entry_count()}")
+    print(f"Words:              {store.get_word_count()}")
+    print(f"Abbreviations:      {store.get_abbreviation_count()}")
+    print(f"Phrases:            {store.get_phrase_count()}")
+    print(f"OCR Confusions:     {store.get_ocr_confusion_count()}")
+    print(f"Foreign Words:      {store.get_foreign_word_count()}")
+
+
+def _lexicon_lookup(store: LexiconStore, word: str) -> None:
+    """Look up a word and print surface + accentless matches."""
+    surface = store.lookup(word)
+    accentless = store.lookup_accentless(word)
+
+    print(f"Lookup: {word!r}")
+    print("=" * 40)
+    if surface.found:
+        print(f"Surface match ({len(surface.entries)} entries):")
+        for e in surface.entries:
+            kind = getattr(e, "kind", type(e).__name__)
+            surface_text = getattr(e, "surface", getattr(e, "phrase", ""))
+            print(f"  [{kind}] {surface_text}")
+    else:
+        print("No surface match.")
+    if accentless.found:
+        print(f"\nAccentless match ({len(accentless.entries)} entries):")
+        for e in accentless.entries:
+            kind = getattr(e, "kind", type(e).__name__)
+            surface_text = getattr(e, "surface", getattr(e, "phrase", ""))
+            conf = e.score.confidence if hasattr(e, "score") else "N/A"
+            print(f"  [{kind}] {surface_text} (conf={conf})")
+    else:
+        print("\nNo accentless match.")
+
+
+def _lexicon_candidates(store: LexiconStore, key: str) -> None:
+    """Print syllable candidates for a no-tone key."""
+    candidates = store.get_syllable_candidates(key)
+    if candidates:
+        print(f"Candidates for no-tone key: {key!r}")
+        print("=" * 40)
+        for c in sorted(candidates, key=lambda x: x.score.confidence, reverse=True):
+            print(f"  {c.surface:20s}  conf={c.score.confidence:.3f}")
+    else:
+        print(f"No candidates found for {key!r}")
+
+
+def _lexicon_validate() -> None:
+    """Validate all built-in lexicon resource files."""
+    from vn_corrector.common.validation import validate_lexicon_file
+
+    resources: list[tuple[str, str]] = [
+        ("syllables.vi.json", "syllable"),
+        ("words.vi.json", "word"),
+        ("units.vi.json", "unit"),
+        ("abbreviations.vi.json", "abbreviation"),
+        ("foreign_words.json", "foreign_words"),
+        ("phrases.vi.json", "phrase"),
+        ("ocr_confusions.vi.json", "ocr_confusion"),
+    ]
+    all_valid = True
+    for filename, ltype in resources:
+        data = load_json_resource(filename)
+        result = validate_lexicon_file(data, ltype)
+        status = "PASS" if result.valid else "FAIL"
+        print(f"[{status}] {filename}")
+        if not result.valid:
+            all_valid = False
+            for err in result.errors:
+                print(f"       {err}")
+    if all_valid:
+        print("\nAll lexicon files valid.")
+    else:
+        print("\nSome lexicon files have errors.")
+
+
 def _run_lexicon(args: argparse.Namespace) -> None:
     """Dispatch lexicon subcommands."""
     store = LexiconStore.load_default()
 
     if args.lex_subcommand == "info":
-        print("Lexicon Statistics")
-        print("=" * 40)
-        syllable_count = store.get_syllable_entry_count()
-        phrase_count = store.get_phrase_count()
-        print(f"Syllables:          {syllable_count}")
-        print(f"Words:              {store.get_word_count()}")
-        print(f"Abbreviations:      {store.get_abbreviation_count()}")
-        print(f"Phrases:            {phrase_count}")
-        print(f"OCR Confusions:     {store.get_ocr_confusion_count()}")
-        print(f"Foreign Words:      {store.get_foreign_word_count()}")
-
+        _lexicon_info(store)
     elif args.lex_subcommand == "lookup":
-        word = args.word
-        surface = store.lookup(word)
-        accentless = store.lookup_accentless(word)
-
-        print(f"Lookup: {word!r}")
-        print("=" * 40)
-        if surface.found:
-            print(f"Surface match ({len(surface.entries)} entries):")
-            for e in surface.entries:
-                kind = getattr(e, "kind", type(e).__name__)
-                surface_text = getattr(e, "surface", getattr(e, "phrase", ""))
-                print(f"  [{kind}] {surface_text}")
-        else:
-            print("No surface match.")
-        if accentless.found:
-            print(f"\nAccentless match ({len(accentless.entries)} entries):")
-            for e in accentless.entries:
-                kind = getattr(e, "kind", type(e).__name__)
-                surface_text = getattr(e, "surface", getattr(e, "phrase", ""))
-                conf = e.score.confidence if hasattr(e, "score") else "N/A"
-                print(f"  [{kind}] {surface_text} (conf={conf})")
-        else:
-            print("\nNo accentless match.")
-
+        _lexicon_lookup(store, args.word)
     elif args.lex_subcommand == "candidates":
-        key = args.no_tone_key
-        candidates = store.get_syllable_candidates(key)
-        if candidates:
-            print(f"Candidates for no-tone key: {key!r}")
-            print("=" * 40)
-            for c in sorted(candidates, key=lambda x: x.score.confidence, reverse=True):
-                print(f"  {c.surface:20s}  conf={c.score.confidence:.3f}")
-        else:
-            print(f"No candidates found for {key!r}")
-
+        _lexicon_candidates(store, args.no_tone_key)
     elif args.lex_subcommand == "validate":
-        from vn_corrector.common.validation import validate_lexicon_file
-
-        resources: list[tuple[str, str]] = [
-            ("syllables.vi.json", "syllable"),
-            ("words.vi.json", "word"),
-            ("units.vi.json", "unit"),
-            ("abbreviations.vi.json", "abbreviation"),
-            ("foreign_words.json", "foreign_words"),
-            ("phrases.vi.json", "phrase"),
-            ("ocr_confusions.vi.json", "ocr_confusion"),
-        ]
-        all_valid = True
-        for filename, ltype in resources:
-            data = load_json_resource(filename)
-            result = validate_lexicon_file(data, ltype)
-            status = "PASS" if result.valid else "FAIL"
-            print(f"[{status}] {filename}")
-            if not result.valid:
-                all_valid = False
-                for err in result.errors:
-                    print(f"       {err}")
-        if all_valid:
-            print("\nAll lexicon files valid.")
-        else:
-            print("\nSome lexicon files have errors.")
+        _lexicon_validate()
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    # Detect if the first argument matches a known subcommand.
-    # If so, create a parser with subparsers; otherwise create a flat parser.
+    """Parse command-line arguments, detecting subcommands automatically.
+
+    Detects if the first argument matches a known subcommand (e.g. ``lexicon``)
+    and builds the appropriate parser with or without subparsers.
+    """
     raw = argv if argv is not None else sys.argv[1:]
     is_lexicon = bool(raw) and raw[0] == "lexicon"
 
@@ -200,6 +215,12 @@ def format_output(result: CorrectionResult) -> str:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """CLI entrypoint — parses args and dispatches to lexicon or correction.
+
+    Args:
+        argv: Override for ``sys.argv[1:]`` (used in tests).
+
+    """
     args = parse_args(argv)
 
     if getattr(args, "command", None) == "lexicon":

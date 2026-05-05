@@ -122,9 +122,11 @@ class SqliteLexiconStore(LexiconStore):
         store = SqliteLexiconStore("lexicon.db")
         result = store.lookup("muỗng")
         print(result.found)  # True
+
     """
 
     def __init__(self, db_path: str | Path) -> None:
+        """Initialize the store by opening a read-only SQLite database connection."""
         self._conn = sqlite3.connect(str(db_path))
         self._conn.row_factory = sqlite3.Row
 
@@ -155,6 +157,7 @@ class SqliteLexiconStore(LexiconStore):
             db_path: Where to write the database file.
             overwrite: If ``False`` (default) and *db_path* already exists,
                 it is reused as-is and no data is written.
+
         """
         path = Path(db_path)
         if not overwrite and path.exists():
@@ -172,6 +175,7 @@ class SqliteLexiconStore(LexiconStore):
     # -- Surface / exact lookups -------------------------------------------
 
     def lookup(self, text: str) -> LexiconLookupResult:
+        """Look up *text* across syllables, words, and units."""
         rows: list[LexiconEntry | AbbreviationEntry | PhraseEntry] = []
         rows.extend(self._query_syllable_surface(text))
         rows.extend(self._query_word_surface(text))
@@ -179,6 +183,7 @@ class SqliteLexiconStore(LexiconStore):
         return LexiconLookupResult(query=text, found=bool(rows), entries=tuple(rows))
 
     def lookup_syllable(self, text: str) -> list[str]:
+        """Return all surface forms for the accented-stripped base of *text*."""
         key = strip_accents(text)
         cur = self._conn.execute(
             "SELECT surface FROM lexicon_syllables WHERE base = ? ORDER BY surface",
@@ -187,6 +192,7 @@ class SqliteLexiconStore(LexiconStore):
         return [row["surface"] for row in cur.fetchall()]
 
     def lookup_unit(self, text: str) -> list[LexiconEntry]:
+        """Look up a measurement or unit word by exact surface."""
         cur = self._conn.execute(
             "SELECT surface, freq, domain FROM lexicon_units WHERE surface = ?",
             (text,),
@@ -194,6 +200,7 @@ class SqliteLexiconStore(LexiconStore):
         return [_row_to_unit_entry(row) for row in cur.fetchall()]
 
     def lookup_abbreviation(self, text: str) -> LexiconLookupResult:
+        """Look up an abbreviation by its exact form."""
         cur = self._conn.execute(
             "SELECT * FROM lexicon_abbreviations WHERE abbreviation = ?",
             (text,),
@@ -208,6 +215,7 @@ class SqliteLexiconStore(LexiconStore):
         )
 
     def lookup_phrase(self, text: str) -> list[PhraseEntry]:
+        """Look up a phrase by its exact surface form."""
         cur = self._conn.execute(
             "SELECT * FROM lexicon_phrases WHERE phrase = ?",
             (text,),
@@ -215,6 +223,7 @@ class SqliteLexiconStore(LexiconStore):
         return [_row_to_phrase_entry(row) for row in cur.fetchall()]
 
     def lookup_phrase_str(self, text: str) -> str | None:
+        """Return the first phrase matching the accent-stripped version of *text*."""
         key = strip_accents(text)
         cur = self._conn.execute(
             "SELECT phrase FROM lexicon_phrases WHERE no_tone = ? LIMIT 1",
@@ -226,6 +235,7 @@ class SqliteLexiconStore(LexiconStore):
     # -- Accentless / no-tone lookups --------------------------------------
 
     def lookup_accentless(self, text: str) -> LexiconLookupResult:
+        """Look up *text* with accents stripped, matching syllables and words."""
         key = strip_accents(text)
         rows: list[LexiconEntry | AbbreviationEntry | PhraseEntry] = []
         rows.extend(self._query_syllable_base(key))
@@ -233,9 +243,11 @@ class SqliteLexiconStore(LexiconStore):
         return LexiconLookupResult(query=text, found=bool(rows), entries=tuple(rows))
 
     def lookup_no_tone(self, text: str) -> LexiconLookupResult:
+        """Alias for :meth:`lookup_accentless`."""
         return self.lookup_accentless(text)
 
     def lookup_phrase_normalized(self, text: str) -> list[PhraseEntry]:
+        """Look up phrases whose no-tone key matches the accent-stripped *text*."""
         key = strip_accents(text)
         cur = self._conn.execute(
             "SELECT * FROM lexicon_phrases WHERE no_tone = ? ORDER BY phrase",
@@ -244,6 +256,7 @@ class SqliteLexiconStore(LexiconStore):
         return [_row_to_phrase_entry(row) for row in cur.fetchall()]
 
     def get_syllable_candidates(self, no_tone_key: str) -> list[LexiconEntry]:
+        """Return syllable entries for a given no-tone key, ordered by frequency descending."""
         cur = self._conn.execute(
             "SELECT surface, freq FROM lexicon_syllables WHERE base = ? ORDER BY freq DESC",
             (no_tone_key,),
@@ -256,6 +269,7 @@ class SqliteLexiconStore(LexiconStore):
     # -- OCR confusion -----------------------------------------------------
 
     def lookup_ocr(self, noisy: str) -> list[str]:
+        """Return correction strings for a noisy OCR token."""
         cur = self._conn.execute(
             "SELECT corrections FROM lexicon_ocr_confusions WHERE noisy = ?",
             (noisy,),
@@ -267,6 +281,7 @@ class SqliteLexiconStore(LexiconStore):
         return corrections
 
     def get_ocr_corrections(self, noisy: str) -> OcrConfusionLookupResult:
+        """Look up OCR corrections for *noisy* with confidence scores."""
         cur = self._conn.execute(
             "SELECT corrections, confidence FROM lexicon_ocr_confusions WHERE noisy = ?",
             (noisy,),
@@ -283,6 +298,7 @@ class SqliteLexiconStore(LexiconStore):
         return OcrConfusionLookupResult(query=noisy, found=True, corrections=candidates)
 
     def get_all_ocr_confusions(self) -> dict[str, list[str]]:
+        """Return every OCR confusion entry as a {noisy: [corrections]} dict."""
         cur = self._conn.execute(
             "SELECT noisy, corrections FROM lexicon_ocr_confusions ORDER BY noisy",
         )
@@ -294,6 +310,7 @@ class SqliteLexiconStore(LexiconStore):
     # -- Membership --------------------------------------------------------
 
     def contains_word(self, text: str) -> bool:
+        """Check whether *text* exists as a word or unit."""
         cur = self._conn.execute(
             "SELECT 1 FROM lexicon_words WHERE surface = ? "
             "UNION SELECT 1 FROM lexicon_units WHERE surface = ? LIMIT 1",
@@ -302,6 +319,7 @@ class SqliteLexiconStore(LexiconStore):
         return cur.fetchone() is not None
 
     def contains_syllable(self, text: str) -> bool:
+        """Check whether *text* exists as a syllable."""
         cur = self._conn.execute(
             "SELECT 1 FROM lexicon_syllables WHERE surface = ? LIMIT 1",
             (text,),
@@ -309,6 +327,7 @@ class SqliteLexiconStore(LexiconStore):
         return cur.fetchone() is not None
 
     def contains_foreign_word(self, text: str) -> bool:
+        """Check whether *text* exists as a foreign word."""
         cur = self._conn.execute(
             "SELECT 1 FROM lexicon_foreign_words WHERE word = ? LIMIT 1",
             (text,),
@@ -318,15 +337,18 @@ class SqliteLexiconStore(LexiconStore):
     # -- Aggregate / statistics --------------------------------------------
 
     def get_abbreviation_entries(self) -> list[AbbreviationEntry]:
+        """Return all abbreviation entries, ordered alphabetically."""
         cur = self._conn.execute("SELECT * FROM lexicon_abbreviations ORDER BY abbreviation")
         return [_row_to_abbreviation_entry(row) for row in cur.fetchall()]
 
     def get_abbreviation_count(self) -> int:
+        """Return the total number of abbreviation entries."""
         cur = self._conn.execute("SELECT COUNT(*) AS cnt FROM lexicon_abbreviations")
         row = cur.fetchone()
         return row["cnt"] if row is not None else 0
 
     def get_phrase_count(self) -> int:
+        """Return the number of distinct normalized phrases."""
         cur = self._conn.execute(
             "SELECT COUNT(DISTINCT no_tone) AS cnt FROM lexicon_phrases",
         )
@@ -334,16 +356,19 @@ class SqliteLexiconStore(LexiconStore):
         return row["cnt"] if row is not None else 0
 
     def get_ocr_confusion_count(self) -> int:
+        """Return the total number of OCR confusion entries."""
         cur = self._conn.execute("SELECT COUNT(*) AS cnt FROM lexicon_ocr_confusions")
         row = cur.fetchone()
         return row["cnt"] if row is not None else 0
 
     def get_syllable_entry_count(self) -> int:
+        """Return the total number of syllable entries."""
         cur = self._conn.execute("SELECT COUNT(*) AS cnt FROM lexicon_syllables")
         row = cur.fetchone()
         return row["cnt"] if row is not None else 0
 
     def get_word_count(self) -> int:
+        """Return the combined count of words and units."""
         cur = self._conn.execute(
             "SELECT COUNT(*) AS cnt FROM ("
             "SELECT surface FROM lexicon_words "
@@ -354,6 +379,7 @@ class SqliteLexiconStore(LexiconStore):
         return row["cnt"] if row is not None else 0
 
     def get_foreign_word_count(self) -> int:
+        """Return the total number of foreign word entries."""
         cur = self._conn.execute("SELECT COUNT(*) AS cnt FROM lexicon_foreign_words")
         row = cur.fetchone()
         return row["cnt"] if row is not None else 0
