@@ -27,8 +27,8 @@ from vn_corrector.common.types import (
     Provenance,
     Score,
 )
-from vn_corrector.lexicon.accent_stripper import strip_accents
 from vn_corrector.stage2_lexicon.backends.json_store import load_json_resource
+from vn_corrector.stage2_lexicon.core.accent_stripper import strip_accents
 from vn_corrector.stage2_lexicon.core.normalize import normalize_key
 from vn_corrector.stage2_lexicon.core.store import LexiconStore
 from vn_corrector.stage2_lexicon.core.types import LexiconIndex

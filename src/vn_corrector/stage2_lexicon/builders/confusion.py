@@ -11,8 +11,8 @@ from vn_corrector.common.types import (
     OcrConfusionEntry,
     Score,
 )
-from vn_corrector.lexicon.accent_stripper import strip_accents
 from vn_corrector.stage2_lexicon.builders.base import LexiconBuilder
+from vn_corrector.stage2_lexicon.core.accent_stripper import strip_accents
 from vn_corrector.stage2_lexicon.core.types import BuilderInput, BuilderOutput
 
 

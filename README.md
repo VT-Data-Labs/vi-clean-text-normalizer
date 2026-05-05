@@ -233,7 +233,7 @@ doc = protect("Mua 2 hộp sữa, giá 450.000đ, giao tại 12 Nguyễn Huệ")
 ### Lexicon store
 
 ```python
-from vn_corrector.lexicon import JsonLexiconStore, LexiconStore
+from vn_corrector.stage2_lexicon import JsonLexiconStore, LexiconStore
 
 # Default backend — loads all built-in JSON resources
 store = LexiconStore.load_default()  # returns JsonLexiconStore
@@ -257,7 +257,7 @@ store.lookup_phrase_str("so muong gat ngang")  # "số muỗng gạt ngang"
 #### SQLite backend
 
 ```python
-from vn_corrector.lexicon.backends import SqliteLexiconStore
+from vn_corrector.stage2_lexicon.backends.sqlite_store import SqliteLexiconStore
 
 # Build from built-in resources
 store = SqliteLexiconStore.from_builtin_resources("lexicon.db", overwrite=True)

@@ -1,4 +1,9 @@
-"""Vietnamese accent stripping utilities."""
+"""Vietnamese accent stripping utilities.
+
+Moved from ``vn_corrector.lexicon.accent_stripper`` as part of the
+``lexicon/`` → ``stage2_lexicon/`` merge.  Backward-compatible re-exports
+are maintained in ``vn_corrector.lexicon.accent_stripper``.
+"""
 
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
 """Tests for Vietnamese accent stripping."""
 
-from vn_corrector.lexicon.accent_stripper import (
+from vn_corrector.stage2_lexicon.core.accent_stripper import (
     VIETNAMESE_ACCENT_MAP,
     strip_accents,
     strip_accents_preserve_case,

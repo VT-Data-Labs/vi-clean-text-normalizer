@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re as _re
 
-from vn_corrector.lexicon.accent_stripper import strip_accents
+from vn_corrector.stage2_lexicon.core.accent_stripper import strip_accents
 
 _WHITESPACE_RE = _re.compile(r"\s+")
 

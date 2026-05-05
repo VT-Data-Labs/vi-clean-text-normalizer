@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from vn_corrector.lexicon.accent_stripper import strip_accents
+from vn_corrector.stage2_lexicon.core.accent_stripper import strip_accents
 
 
 def is_nonempty_string(value: object) -> bool:

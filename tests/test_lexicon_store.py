@@ -13,8 +13,8 @@ from vn_corrector.common.types import (
     LexiconLookupResult,
     OcrConfusionLookupResult,
 )
-from vn_corrector.lexicon import JsonLexiconStore, LexiconStore
-from vn_corrector.lexicon.backends import SqliteLexiconStore
+from vn_corrector.stage2_lexicon import JsonLexiconStore, LexiconStore
+from vn_corrector.stage2_lexicon.backends.sqlite_store import SqliteLexiconStore
 
 # ======================================================================
 # Abstract test suite — runs against every backend
@@ -421,7 +421,7 @@ class TestJsonLexiconStore(_StoreTestBase):
         assert store.get_ocr_confusion_count() > 0
 
     def test_load_default_lexicon_function(self):
-        from vn_corrector.lexicon.store import load_default_lexicon
+        from vn_corrector.stage2_lexicon.backends.json_store import load_default_lexicon
 
         store = load_default_lexicon()
         assert isinstance(store, JsonLexiconStore)

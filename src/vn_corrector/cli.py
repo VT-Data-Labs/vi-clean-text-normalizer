@@ -13,7 +13,8 @@ from dataclasses import asdict
 from typing import Any, cast
 
 from vn_corrector.common.types import CorrectionResult
-from vn_corrector.lexicon.store import LexiconStore, load_json_resource
+from vn_corrector.stage2_lexicon import LexiconStore
+from vn_corrector.stage2_lexicon.backends.json_store import load_json_resource
 
 
 def _build_lexicon_parser(subparsers: Any) -> argparse.ArgumentParser:
