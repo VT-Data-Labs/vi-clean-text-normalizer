@@ -1,22 +1,22 @@
 """Tests for common modules — constants, errors, types, validation."""
 
 from vn_corrector.common.constants import (
-    REPLACE_THRESHOLD,
-    MIN_MARGIN,
     MAX_CANDIDATES_PER_TOKEN,
+    MIN_MARGIN,
+    REPLACE_THRESHOLD,
     UNICODE_NORMALIZATION_FORM,
 )
 from vn_corrector.common.errors import (
+    CasePattern,
     CorrectionFlagType,
     DecisionType,
-    CasePattern,
 )
 from vn_corrector.common.types import (
+    CaseMask,
     CorrectionChange,
+    CorrectionDecision,
     CorrectionFlag,
     CorrectionResult,
-    CorrectionDecision,
-    CaseMask,
     Token,
 )
 from vn_corrector.common.validation import is_nonempty_string, is_probability

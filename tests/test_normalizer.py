@@ -1,13 +1,14 @@
 """Tests for the Unicode normalizer (Stage 0 + Stage 1)."""
 
 import unicodedata
+
 import pytest
 
 from vn_corrector.normalizer import (
     normalize,
     normalize_unicode,
-    remove_invisible_characters,
     normalize_whitespace,
+    remove_invisible_characters,
 )
 
 

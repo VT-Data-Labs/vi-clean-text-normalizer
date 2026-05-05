@@ -28,8 +28,14 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --all-extras
 
-      - name: Run tests with pytest
-        run: uv run pytest -v
+      - name: Lint with ruff
+        run: uv run ruff check src tests
 
-      - name: Run pylint
-        run: uv run pylint src tests
+      - name: Check formatting with ruff
+        run: uv run ruff format --check src tests
+
+      - name: Type check with mypy
+        run: uv run mypy src tests
+
+      - name: Run tests with coverage
+        run: uv run pytest -v --cov --cov-report=term-missing

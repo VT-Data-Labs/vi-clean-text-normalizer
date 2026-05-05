@@ -97,10 +97,7 @@ def main(argv: list[str] | None = None) -> None:
                 print()
         return
 
-    if args.text:
-        text = " ".join(args.text)
-    else:
-        text = sys.stdin.read().strip()
+    text = " ".join(args.text) if args.text else sys.stdin.read().strip()
 
     if not text:
         print("Error: no input text provided.", file=sys.stderr)

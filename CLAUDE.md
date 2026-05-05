@@ -24,8 +24,10 @@ Every behavior change must include tests.
 Required before completion:
 
 ```bash
+ruff check src tests
+ruff format --check src tests
+mypy src tests
 pytest
-pylint src tests
 ```
 
 If a command fails, report the failure clearly and do not claim the task is complete.

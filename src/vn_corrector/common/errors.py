@@ -1,9 +1,9 @@
 """Correction flag types and error classes."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class CorrectionFlagType(str, Enum):
+class CorrectionFlagType(StrEnum):
     """Types of flags raised during correction."""
 
     AMBIGUOUS_DIACRITIC = "AMBIGUOUS_DIACRITIC"
@@ -16,7 +16,7 @@ class CorrectionFlagType(str, Enum):
     DOMAIN_TERM_UNKNOWN = "DOMAIN_TERM_UNKNOWN"
 
 
-class DecisionType(str, Enum):
+class DecisionType(StrEnum):
     """Decision types for correction output."""
 
     KEEP_ORIGINAL = "KEEP_ORIGINAL"
@@ -26,7 +26,7 @@ class DecisionType(str, Enum):
     PROTECTED = "PROTECTED"
 
 
-class CasePattern(str, Enum):
+class CasePattern(StrEnum):
     """Case pattern for a token (see Stage 2 — Case Masking)."""
 
     LOWER = "LOWER"

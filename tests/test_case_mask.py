@@ -1,12 +1,12 @@
 """Tests for case masking (Stage 2 + Stage 8)."""
 
 from vn_corrector.case_mask import (
+    apply_case_mask,
+    create_case_mask,
     detect_case_pattern,
+    restore_case,
     to_lowercase,
     to_uppercase,
-    restore_case,
-    create_case_mask,
-    apply_case_mask,
 )
 from vn_corrector.common.errors import CasePattern
 

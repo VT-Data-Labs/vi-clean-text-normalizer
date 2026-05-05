@@ -2,8 +2,7 @@
 
 import pytest
 
-from vn_corrector.tokenizer import tokenize, reconstruct
-
+from vn_corrector.tokenizer import reconstruct, tokenize
 
 # ---------------------------------------------------------------------------
 # Roundtrip guarantee
@@ -148,8 +147,15 @@ class TestTokenTypes:
         types = [t.token_type for t in tokens]
         # "NGANG" has no Vietnamese diacritics → FOREIGN_WORD
         assert types == [
-            "VI_WORD", "SPACE", "VI_WORD", "SPACE",
-            "PUNCT", "VI_WORD", "SPACE", "FOREIGN_WORD", "PUNCT",
+            "VI_WORD",
+            "SPACE",
+            "VI_WORD",
+            "SPACE",
+            "PUNCT",
+            "VI_WORD",
+            "SPACE",
+            "FOREIGN_WORD",
+            "PUNCT",
         ]
 
     def test_mixed_vi_and_foreign(self):
@@ -162,19 +168,41 @@ class TestTokenTypes:
         types = [t.token_type for t in tokens]
         # "PHA" has no Vietnamese diacritics → FOREIGN_WORD
         assert types == [
-            "PUNCT", "SPACE", "VI_WORD", "SPACE", "VI_WORD",
-            "SPACE", "VI_WORD", "NEWLINE",
-            "PUNCT", "SPACE", "FOREIGN_WORD", "SPACE", "VI_WORD", "NEWLINE",
+            "PUNCT",
+            "SPACE",
+            "VI_WORD",
+            "SPACE",
+            "VI_WORD",
+            "SPACE",
+            "VI_WORD",
+            "NEWLINE",
+            "PUNCT",
+            "SPACE",
+            "FOREIGN_WORD",
+            "SPACE",
+            "VI_WORD",
+            "NEWLINE",
         ]
 
     def test_table_row(self):
         tokens = tokenize("Sản phẩm | Số lượng\n--- | ---\n")
         types = [t.token_type for t in tokens]
         assert types == [
-            "VI_WORD", "SPACE", "VI_WORD", "SPACE",
-            "PUNCT", "SPACE", "VI_WORD", "SPACE", "VI_WORD",
+            "VI_WORD",
+            "SPACE",
+            "VI_WORD",
+            "SPACE",
+            "PUNCT",
+            "SPACE",
+            "VI_WORD",
+            "SPACE",
+            "VI_WORD",
             "NEWLINE",
-            "PUNCT", "SPACE", "PUNCT", "SPACE", "PUNCT",
+            "PUNCT",
+            "SPACE",
+            "PUNCT",
+            "SPACE",
+            "PUNCT",
             "NEWLINE",
         ]
 
@@ -236,9 +264,16 @@ class TestOcrEdgeCases:
         tokens = tokenize("3ty75 120m2 2PN")
         types = [t.token_type for t in tokens]
         assert types == [
-            "NUMBER", "FOREIGN_WORD", "NUMBER", "SPACE",
-            "NUMBER", "FOREIGN_WORD", "NUMBER", "SPACE",
-            "NUMBER", "FOREIGN_WORD",
+            "NUMBER",
+            "FOREIGN_WORD",
+            "NUMBER",
+            "SPACE",
+            "NUMBER",
+            "FOREIGN_WORD",
+            "NUMBER",
+            "SPACE",
+            "NUMBER",
+            "FOREIGN_WORD",
         ]
 
 

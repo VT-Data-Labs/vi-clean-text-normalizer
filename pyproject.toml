@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Vietnamese OCR post-correction engine — conservative, explainable, and safe"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
+license = {text = "Apache-2.0"}
 authors = [
     {name = "Dev Workstation"},
 ]
@@ -13,8 +13,10 @@ dependencies = []
 [project.optional-dependencies]
 dev = [
     "pytest>=9",
-    "pylint>=4",
-    "black>=25",
+    "ruff>=0.11",
+    "mypy>=1.15",
+    "pytest-cov>=6",
+    "pre-commit>=4",
 ]
 
 [project.scripts]
@@ -33,24 +35,45 @@ packages = ["src/vn_corrector"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+addopts = "--cov=vn_corrector --cov-report=term-missing --cov-report=xml"
 
-[tool.pylint]
-py-version = "3.12"
-recursive = true
-good-names = ""
-disable = [
-    "missing-docstring",
-    "too-few-public-methods",
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "ARG",  # flake8-unused-arguments
+    "RUF",  # ruff-specific rules
+]
+ignore = [
+    "D",    # pydocstyle (matches current missing-docstring disable)
 ]
 
-[tool.pylint.similarities]
-ignore-signatures = true
-ignore-comments = true
-ignore-docstrings = true
-min-similarity-lines = 6
-ignore-imports = true
+[tool.ruff.format]
+quote-style = "double"
 
-[tool.black]
-line-length = 100
-target-version = ["py312"]
-skip-magic-trailing-comma = true
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = [
+    "ARG001",  # unused function argument (common in pytest fixtures)
+    "RUF001",  # ambiguous char detection (intentional: testing non-standard spaces)
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+allow_untyped_decorators = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
