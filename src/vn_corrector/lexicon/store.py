@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
-from importlib.resources import files as resource_files
 from pathlib import Path
 from typing import cast
 
@@ -31,7 +30,7 @@ from vn_corrector.common.types import (
 )
 from vn_corrector.lexicon.accent_stripper import strip_accents
 
-_RESOURCE_DIR = "resources" / Path("lexicons")
+_RESOURCE_DIR = Path(__file__).resolve().parent.parent.parent.parent / "resources" / "lexicons"
 
 
 # ---------------------------------------------------------------------------
@@ -41,7 +40,7 @@ _RESOURCE_DIR = "resources" / Path("lexicons")
 
 def resource_path(filename: str) -> Path:
     """Return the filesystem path to a built-in lexicon resource file."""
-    return cast(Path, resource_files("vn_corrector").joinpath(_RESOURCE_DIR, filename))
+    return _RESOURCE_DIR / filename
 
 
 def load_json_resource(filename: str) -> list[dict[str, object]] | dict[str, object]:

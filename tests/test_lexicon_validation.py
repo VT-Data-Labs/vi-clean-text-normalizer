@@ -13,7 +13,7 @@ from vn_corrector.common.validation import (
     validate_word_entry,
 )
 
-_RESOURCE_DIR = Path(__file__).parents[1] / "src" / "vn_corrector" / "resources" / "lexicons"
+_RESOURCE_DIR = Path(__file__).parents[1] / "resources" / "lexicons"
 
 
 def _load_resource(filename: str) -> Any:
