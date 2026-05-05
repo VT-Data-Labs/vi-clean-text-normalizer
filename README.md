@@ -30,22 +30,25 @@ Primary use cases:
 
 ## Project Status
 
-> **Status:** ✅ Milestone 1 complete — basic normalization layer (normalizer, case masker, tokenizer)
+> **Status:** ✅ Milestone 2 complete — lexicon store with pluggable backends (normalizer + case masker + tokenizer from M1)
 
 ### Implemented
 
 - [x] Unicode normalization (NFC, invisible character removal, whitespace normalization)
 - [x] Case masking and restoration (UPPER / LOWER / TITLE / MIXED)
 - [x] Tokenization with roundtrip reconstruction guarantee
-- [x] CLI entrypoint (Stage 0 normalization)
+- [x] CLI entrypoint (Stage 0 normalization + lexicon subcommands)
 - [x] Shared types, constants, validation, and error enums
-- [x] CI pipeline (pytest + pylint)
+- [x] CI pipeline (pytest + ruff + mypy + pre-commit)
+- [x] Backend-agnostic lexicon store with ABC interface
+- [x] Built-in JSON resource loading (syllables, words, units, phrases, abbreviations, OCR confusions, foreign terms)
+- [x] SQLite-backed lexicon store (stdlib `sqlite3`, documented schema)
+- [x] Lexicon inspection CLI (`corrector lexicon info|lookup|candidates|validate`)
 
 ### In Progress
 
 - [ ] Full correction pipeline (Stages 3–9)
 - [ ] Protected token detection
-- [ ] Lexicon builders and store
 - [ ] Candidate generation and scoring
 - [ ] Decision engine
 - [ ] Evaluation harness
@@ -65,7 +68,9 @@ Primary use cases:
 - **Case masking** — detect case patterns (UPPER/LOWER/TITLE/MIXED), produce lowercase working copies, restore original casing after correction
 - **Tokenization** — fine-grained token splitting with strict roundtrip guarantee: `reconstruct(tokenize(text)) == text`
 - **Vietnamese detection** — correct identification of Vietnamese characters with tone marks across Unicode blocks
-- **CLI interface** — single-text, batch file, interactive, and JSON output modes
+- **Lexicon store** — pluggable backend architecture (ABC + concrete implementations), accent-insensitive lookups, syllable candidates, phrase matching, OCR confusion resolution
+- **SQLite backend** — query-based lexicon store using stdlib `sqlite3`, no extra dependencies, auto-populate from built-in resources
+- **CLI interface** — single-text, batch file, interactive, JSON output modes, plus dedicated `lexicon` subcommands (info, lookup, candidates, validate)
 
 ---
 
@@ -127,6 +132,25 @@ Confidence: 100.00%
 
 (Full correction pipeline is in development — currently runs Stage 0 normalization only.)
 
+### Lexicon subcommands
+
+The `corrector lexicon` subcommand group provides inspection tools:
+
+```bash
+# Show lexicon statistics
+uv run corrector lexicon info
+
+# Look up a word across all indexes
+uv run corrector lexicon lookup "muỗng"
+uv run corrector lexicon lookup "kg"
+
+# Show syllable candidates for a no-tone key
+uv run corrector lexicon candidates muong
+
+# Validate all built-in lexicon resource files
+uv run corrector lexicon validate
+```
+
 ### Batch and JSON modes
 
 ```bash
@@ -182,7 +206,48 @@ tokens = tokenize("SỐ MÙÔNG (GẠT NGANG)")
 text = reconstruct(tokens)  # "SỐ MÙÔNG (GẠT NGANG)"
 ```
 
+### Lexicon store
+
+```python
+from vn_corrector.lexicon import JsonLexiconStore, LexiconStore
+
+# Default backend — loads all built-in JSON resources
+store = LexiconStore.load_default()  # returns JsonLexiconStore
+
+# Syllable candidates (accent-insensitive)
+store.get_syllable_candidates("muong")
+# → [LexiconEntry(surface="muỗng", ...), LexiconEntry(surface="mường", ...), ...]
+
+# Surface lookup
+store.lookup("muỗng")      # LexiconLookupResult(found=True, ...)
+store.contains_word("số muỗng")  # True
+store.contains_foreign_word("DHA")  # True
+
+# OCR confusion corrections
+store.get_ocr_corrections("mùông")  # OcrConfusionLookupResult with Candidate objects
+
+# Phrase matching
+store.lookup_phrase_str("so muong gat ngang")  # "số muỗng gạt ngang"
+```
+
+#### SQLite backend
+
+```python
+from vn_corrector.lexicon.backends import SqliteLexiconStore
+
+# Build from built-in resources
+store = SqliteLexiconStore.from_builtin_resources("lexicon.db", overwrite=True)
+
+# Or open an existing database
+store = SqliteLexiconStore.from_path("lexicon.db")
+
+# Same API as JsonLexiconStore
+store.contains_syllable("muỗng")  # True
+```
+
 ---
+
+
 
 ## Architecture
 
@@ -226,7 +291,11 @@ src/vn_corrector/
 │   ├── errors.py           # Flag types, decision types, case patterns
 │   ├── types.py            # Core dataclasses (Token, CaseMask, CorrectionResult, etc.)
 │   └── validation.py       # Input validation helpers
-├── lexicon/                # Lexicon store and builders (not yet populated)
+├── lexicon/
+│   ├── __init__.py         # Re-exports LexiconStore, JsonLexiconStore, SqliteLexiconStore
+│   ├── store.py            # LexiconStore ABC + JsonLexiconStore (in-memory, JSON resources)
+│   ├── backends.py         # SqliteLexiconStore (stdlib sqlite3, documented schema)
+│   └── accent_stripper.py  # Vietnamese diacritic stripping for lookup keys
 └── utils/
     └── unicode.py          # Vietnamese character detection
 ```
@@ -241,13 +310,16 @@ src/vn_corrector/
 - Tokenizer with roundtrip guarantee
 - 174 tests, CI pipeline
 
-### ⏳ M2 — Lexicon Builder (next)
-- Syllable lexicon builder
-- Word lexicon loader
-- JSON lexicon store
+### ✅ M2 — Lexicon Store (complete)
+- Backend-agnostic `LexiconStore` ABC with typed interface
+- `JsonLexiconStore` — in-memory store loaded from built-in JSON resources
+- `SqliteLexiconStore` — query-based store backed by stdlib `sqlite3`
+- Built-in data: syllables, words, units, phrases, abbreviations, OCR confusions, foreign terms
+- Abstract test suite (391 tests) validated against both backends
+- CLI lexicon subcommands (info, lookup, candidates, validate)
 
 ### 📋 M3–M8
-See [ROADMAP.md](ROADMAP.md) for the full plan.
+See [PROJECT.md](PROJECT.md) for the full plan.
 
 ---
 
@@ -318,11 +390,13 @@ ruff check --fix src tests
 - [x] Tokenizer with roundtrip guarantee
 - [x] CLI entrypoint
 
-### Milestone 2 — Lexicon Builder
+### Milestone 2 — Lexicon Store ✅
 
-- [ ] Syllable lexicon builder
-- [ ] Word lexicon loader
-- [ ] JSON/SQLite lexicon store
+- [x] Backend-agnostic LexiconStore ABC with typed interface
+- [x] JsonLexiconStore — in-memory store loaded from built-in JSON resources
+- [x] SqliteLexiconStore — query-based store backed by stdlib sqlite3
+- [x] Syllable, word, unit, phrase, abbreviation, OCR confusion, and foreign-word indices
+- [x] CLI lexicon subcommands (info, lookup, candidates, validate)
 
 ### Milestone 3 — Protected Tokens
 
