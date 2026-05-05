@@ -181,3 +181,44 @@ class TestSqliteLexiconStoreNewMethods:
 
     def test_contains_word_still_works(self):
         assert self.store.contains_word("kg")
+
+
+class TestTrustedLexiconIntegration:
+    """Tests that ``load_default()`` loads the trusted word lexicon."""
+
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.store = JsonLexiconStore.load_default()
+
+    def test_loads_trusted_entries(self):
+        """load_default should include trusted word entries."""
+        idx = self.store.get_lexicon_index()
+        assert idx.total_entries() >= 80000, (
+            f"Expected >=80000 entries with trusted lexicon, got {idx.total_entries()}"
+        )
+
+    def test_lookup_no_tone_returns_vietnamese_words(self):
+        """lookup_no_tone should return accented forms from trusted lexicon."""
+        result = self.store.lookup_no_tone("muong")
+        assert result.found
+        surfaces = [e.surface for e in result.entries]
+        assert "muỗng" in surfaces, f"muỗng not in {surfaces}"
+
+    def test_lookup_no_tone_so(self):
+        """Common word "số" should be findable via "so"."""
+        result = self.store.lookup_no_tone("so")
+        assert result.found
+        surfaces = [e.surface for e in result.entries]
+        assert "số" in surfaces or "sô" in surfaces, f"số or sô not in {surfaces}"
+
+    def test_lookup_accentless_duong(self):
+        """đường should be findable via "duong"."""
+        result = self.store.lookup_accentless("duong")
+        assert result.found
+        surfaces = [e.surface for e in result.entries]
+        assert "đường" in surfaces, f"đường not in {surfaces}"
+
+    def test_get_syllable_candidates_still_works(self):
+        """Traditional syllable lookups should still work alongside trusted."""
+        candidates = self.store.get_syllable_candidates("muong")
+        assert len(candidates) >= 3

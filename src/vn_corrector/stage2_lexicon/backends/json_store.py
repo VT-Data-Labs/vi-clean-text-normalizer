@@ -112,9 +112,14 @@ class JsonLexiconStore(LexiconStore):
 
     # -- Loading ---------------------------------------------------------------
 
+    _TRUSTED_JSONL = _RESOURCE_DIR.parent / "lexicon" / "trusted_words.vi.jsonl"
+    _default_store: JsonLexiconStore | None = None
+
     @classmethod
     def load_default(cls) -> JsonLexiconStore:
-        """Load all built-in JSON lexicon files and return a new store."""
+        """Load all built-in JSON lexicon files **plus** the trusted word lexicon."""
+        if cls._default_store is not None:
+            return cls._default_store
         store = cls()
         store._load_syllables()
         store._load_words()
@@ -123,7 +128,77 @@ class JsonLexiconStore(LexiconStore):
         store._load_foreign_words()
         store._load_phrases()
         store._load_ocr_confusions()
+        store._load_trusted_lexicon()
+        cls._default_store = store
         return store
+
+    def _load_trusted_lexicon(self) -> None:
+        """Load the trusted Vietnamese word lexicon from JSONL.
+
+        Each line is a serialised ``LexiconEntry`` dict.  Entries are added
+        to ``_word_data`` and ``_word_index`` so that ``lookup_accentless``
+        and ``lookup_no_tone`` return them.
+        """
+        path = self._TRUSTED_JSONL
+        if not path.is_file():
+            return  # silently skip — run build script first
+
+        count = 0
+        with path.open(encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    raw = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+
+                entry_id = raw.get("entry_id", "")
+                surface = raw.get("surface", "")
+                normalized = raw.get("normalized", "")
+                no_tone = raw.get("no_tone", "")
+                kind_str = raw.get("kind", "word")
+                score_dict = raw.get("score", {})
+                provenance_dict = raw.get("provenance", {})
+                tags = tuple(raw.get("tags", []))
+
+                if not surface or not no_tone:
+                    continue
+
+                kind = LexiconKind(kind_str) if kind_str in LexiconKind._value2member_map_ else LexiconKind.WORD
+
+                lex_entry = LexiconEntry(
+                    entry_id=entry_id,
+                    surface=surface,
+                    normalized=normalized,
+                    no_tone=no_tone,
+                    kind=kind,
+                    score=Score(
+                        confidence=float(score_dict.get("confidence", 1.0)),
+                        frequency=float(score_dict.get("frequency", 0.0)),
+                    ),
+                    provenance=Provenance(
+                        source=LexiconSource(provenance_dict["source"]) if provenance_dict.get("source") else LexiconSource.EXTERNAL_DICTIONARY,
+                        source_name=provenance_dict.get("source_name"),
+                    ),
+                    tags=tags,
+                )
+                self._word_data.append(lex_entry)
+                self._word_surfaces.add(surface)
+                if surface not in self._word_by_surface:
+                    self._word_by_surface[surface] = []
+                self._word_by_surface[surface].append(lex_entry)
+                if no_tone not in self._word_index:
+                    self._word_index[no_tone] = []
+                self._word_index[no_tone].append(lex_entry)
+                count += 1
+
+        if count > 0:
+            import logging as _logging
+            _logging.getLogger("lexicon.store").info(
+                "Loaded %d trusted lexicon entries from %s", count, path
+            )
 
     def _load_syllables(self) -> None:
         data: list[dict[str, object]] = load_json_resource("syllables.vi.json")  # type: ignore[assignment]
