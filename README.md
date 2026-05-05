@@ -32,25 +32,27 @@ Primary use cases:
 
 ## Project Status
 
-> **Status:** ✅ Milestone 2 complete — lexicon store with pluggable backends (normalizer + case masker + tokenizer from M1)
+> **Status:** ✅ Milestone 3 complete — protected token detection (normalizer + case masker + tokenizer + lexicon + protected tokens)
 
 ### Implemented
 
 - [x] Unicode normalization (NFC, invisible character removal, whitespace normalization)
-- [x] Case masking and restoration (UPPER / LOWER / TITLE / MIXED)
+- [x] Case masking and restoration (UPPER / LOWER / TITLE / MIXED / UNKNOWN)
 - [x] Tokenization with roundtrip reconstruction guarantee
-- [x] CLI entrypoint (Stage 0 normalization + lexicon subcommands)
+- [x] Protected token detection (URL, email, phone, number, unit, money, percent, code, date, chemical terms)
+- [x] Regex and lexicon-based matchers with conflict resolution
+- [x] Backend-agnostic lexicon store with ABC interface (JSON + SQLite)
+- [x] Built-in JSON resources (syllables, words, units, phrases, abbreviations, OCR confusions, foreign terms)
+- [x] Lexicon build pipeline (syllable, word, phrase, confusion, abbreviation builders)
+- [x] Vietnamese accent stripper for lookup key generation
 - [x] Shared types, constants, validation, and error enums
+- [x] CLI entrypoint (correction + lexicon subcommands)
 - [x] CI pipeline (pytest + ruff + mypy + pre-commit)
-- [x] Backend-agnostic lexicon store with ABC interface
-- [x] Built-in JSON resource loading (syllables, words, units, phrases, abbreviations, OCR confusions, foreign terms)
-- [x] SQLite-backed lexicon store (stdlib `sqlite3`, documented schema)
-- [x] Lexicon inspection CLI (`corrector lexicon info|lookup|candidates|validate`)
+- [x] 582 tests across 14 test files
 
 ### In Progress
 
-- [ ] Full correction pipeline (Stages 3–9)
-- [ ] Protected token detection
+- [ ] Full correction pipeline (Stages 5–9)
 - [ ] Candidate generation and scoring
 - [ ] Decision engine
 - [ ] Evaluation harness
@@ -59,18 +61,20 @@ Primary use cases:
 ### Known Limitations
 
 - APIs may change before `v1.0.0`.
-- Correction logic beyond basic normalization is not yet wired.
+- Correction logic beyond basic normalization and protected token masking is not yet wired.
 - See [PROJECT.md](PROJECT.md) for the full roadmap.
 
 ---
 
 ## Features
 
-- **Unicode normalization** — NFC composition, invisible/control character removal, whitespace normalization (preserving intentional newlines)
-- **Case masking** — detect case patterns (UPPER/LOWER/TITLE/MIXED), produce lowercase working copies, restore original casing after correction
+- **Unicode normalization** — NFC composition, invisible/control character removal, whitespace normalization (preserving intentional newlines, tabs, CR)
+- **Case masking** — detect case patterns (UPPER/LOWER/TITLE/MIXED/UNKNOWN), produce lowercase working copies, restore original casing after correction
 - **Tokenization** — fine-grained token splitting with strict roundtrip guarantee: `reconstruct(tokenize(text)) == text`
+- **Protected token detection** — regex and lexicon matchers for URLs, emails, phone numbers, numbers, units, money, percentages, codes, dates, chemical terms; conflict resolution with priority-based ranking
 - **Vietnamese detection** — correct identification of Vietnamese characters with tone marks across Unicode blocks
-- **Lexicon store** — pluggable backend architecture (ABC + concrete implementations), accent-insensitive lookups, syllable candidates, phrase matching, OCR confusion resolution
+- **Lexicon store** — pluggable backend architecture (ABC + JSON + SQLite), accent-insensitive lookups, syllable candidates, phrase matching, OCR confusion resolution
+- **Lexicon build pipeline** — builders for syllables, words, phrases, OCR confusions, and abbreviations with validation and metadata tracking
 - **SQLite backend** — query-based lexicon store using stdlib `sqlite3`, no extra dependencies, auto-populate from built-in resources
 - **CLI interface** — single-text, batch file, interactive, JSON output modes, plus dedicated `lexicon` subcommands (info, lookup, candidates, validate)
 
@@ -112,6 +116,14 @@ tokens = tokenize("SỐ MÙÔNG (GẠT NGANG)")
 reconstructed = reconstruct(tokens)
 
 assert reconstructed == "SỐ MÙÔNG (GẠT NGANG)"  # roundtrip guarantee
+```
+
+```python
+from vn_corrector.protected_tokens import protect
+
+doc = protect("Liên hệ support@example.com hoặc gọi 1900-1009")
+# doc.masked_text: "Liên hệ <<EMAIL_0>> hoặc gọi <<PHONE_0>>"
+# doc.spans: [Span(type=EMAIL, ...), Span(type=PHONE, ...)]
 ```
 
 ---
@@ -208,6 +220,16 @@ tokens = tokenize("SỐ MÙÔNG (GẠT NGANG)")
 text = reconstruct(tokens)  # "SỐ MÙÔNG (GẠT NGANG)"
 ```
 
+### Protected tokens
+
+```python
+from vn_corrector.protected_tokens import protect
+
+# Auto-detect and mask protected spans
+doc = protect("Mua 2 hộp sữa, giá 450.000đ, giao tại 12 Nguyễn Huệ")
+# doc.masked_text: "Mua <<NUMBER_0>> hộp sữa, giá <<MONEY_0>>, giao tại <<NUMBER_1>> Nguyễn Huệ"
+```
+
 ### Lexicon store
 
 ```python
@@ -249,11 +271,9 @@ store.contains_syllable("muỗng")  # True
 
 ---
 
-
-
 ## Architecture
 
-The full pipeline (Stages 3–9 in development):
+The full pipeline (Stages 5–9 in development):
 
 ```text
 OCR Raw Text
@@ -264,7 +284,7 @@ Stage 1: Unicode Normalization       ← implemented
   ↓
 Stage 2: Case Masking                ← implemented
   ↓
-Stage 3: Protected Token Detection   ← not yet implemented
+Stage 3: Protected Token Detection   ← implemented
   ↓
 Stage 4: Tokenization                ← implemented
   ↓
@@ -284,22 +304,63 @@ Stage 9: Output + Change Log + Flags
 ```text
 src/vn_corrector/
 ├── __init__.py
-├── cli.py                  # CLI entrypoint
-├── normalizer.py           # Unicode normalization (Stages 0-1)
-├── case_mask.py            # Case detection and restoration (Stages 2, 8)
-├── tokenizer.py            # Tokenization (Stage 4)
+├── cli.py                   # CLI entrypoint + lexicon subcommands
+├── normalizer.py            # Re-exports from stage1_normalize
+├── case_mask.py             # Case detection and restoration (Stages 2, 8)
+├── tokenizer.py             # Tokenization with roundtrip (Stage 4)
+├── protected_tokens.py      # Re-exports from stage3_protect
 ├── common/
-│   ├── constants.py        # Thresholds, weights, pipeline constants
-│   ├── errors.py           # Flag types, decision types, case patterns
-│   ├── types.py            # Core dataclasses (Token, CaseMask, CorrectionResult, etc.)
-│   └── validation.py       # Input validation helpers
+│   ├── constants.py         # Thresholds, weights, pipeline constants
+│   ├── errors.py            # Flag types, decision types, case patterns
+│   ├── types.py             # Core dataclasses (Token, CaseMask, Span, CorrectionResult, etc.)
+│   └── validation.py        # Lexicon entry validation helpers
 ├── lexicon/
-│   ├── __init__.py         # Re-exports LexiconStore, JsonLexiconStore, SqliteLexiconStore
-│   ├── store.py            # LexiconStore ABC + JsonLexiconStore (in-memory, JSON resources)
-│   ├── backends.py         # SqliteLexiconStore (stdlib sqlite3, documented schema)
-│   └── accent_stripper.py  # Vietnamese diacritic stripping for lookup keys
-└── utils/
-    └── unicode.py          # Vietnamese character detection
+│   ├── __init__.py          # Re-exports: LexiconStore, JsonLexiconStore, SqliteLexiconStore
+│   ├── store.py             # LexiconStore ABC + JsonLexiconStore
+│   ├── backends.py          # SqliteLexiconStore (stdlib sqlite3)
+│   └── accent_stripper.py   # Vietnamese diacritic stripping
+├── utils/
+│   └── unicode.py           # Vietnamese character detection
+├── stage1_normalize/        # Stage 1 — Unicode normalization engine
+│   ├── engine.py            # Orchestrates normalization steps
+│   ├── config.py            # NormalizerConfig dataclass
+│   ├── types.py             # NormalizedDocument dataclass
+│   └── steps/
+│       ├── unicode.py       # NFC normalization step
+│       ├── invisible.py     # Invisible/control character removal
+│       └── whitespace.py    # Whitespace normalization
+├── stage2_lexicon/          # Lexicon store + build pipeline
+│   ├── core/                # ABC, normalize_key, types (LexiconIndex, build types)
+│   ├── backends/            # JsonLexiconStore, SqliteLexiconStore (refactored)
+│   ├── builders/            # Syllable, word, phrase, confusion, abbreviation builders
+│   └── pipeline/            # BuildPipeline orchestration + build_all()
+└── stage3_protect/          # Stage 3 — Protected token detection
+    ├── engine.py            # protect(), mask(), restore(), resolve_conflicts()
+    ├── registry.py          # load_matchers() from YAML config files
+    └── matchers/
+        ├── base.py          # Matcher ABC
+        ├── regex.py         # RegexMatcher — pattern-based detection
+        └── lexicon.py       # LexiconMatcher — dictionary-based detection
+```
+
+### Resource files
+
+```text
+resources/
+├── lexicons/                # Built-in JSON lexicon data
+│   ├── syllables.vi.json    # 7,400+ Vietnamese syllable forms
+│   ├── words.vi.json        # Common Vietnamese words
+│   ├── phrases.vi.json      # Multi-word phrases with n-gram counts
+│   ├── units.vi.json        # Measurement units
+│   ├── abbreviations.vi.json
+│   ├── foreign_words.json   # Domain terms (chemical, brand, etc.)
+│   ├── ocr_confusions.vi.json  # Known OCR error patterns
+│   └── chemicals.txt        # Chemical term lexicon
+└── matchers/                # YAML matcher configurations
+    ├── url.yaml, email.yaml, phone.yaml
+    ├── number.yaml, unit.yaml, money.yaml, percent.yaml
+    ├── code.yaml, date.yaml
+    └── chemical.yaml
 ```
 
 ---
@@ -310,17 +371,22 @@ src/vn_corrector/
 - Unicode normalizer (NFC, control chars, whitespace)
 - Case masker (UPPER/LOWER/TITLE/MIXED/UNKNOWN, Vietnamese Đ/đ)
 - Tokenizer with roundtrip guarantee
-- 174 tests, CI pipeline
 
 ### ✅ M2 — Lexicon Store (complete)
 - Backend-agnostic `LexiconStore` ABC with typed interface
 - `JsonLexiconStore` — in-memory store loaded from built-in JSON resources
 - `SqliteLexiconStore` — query-based store backed by stdlib `sqlite3`
-- Built-in data: syllables, words, units, phrases, abbreviations, OCR confusions, foreign terms
-- Abstract test suite (391 tests) validated against both backends
+- Lexicon build pipeline (syllable, word, phrase, confusion, abbreviation builders)
 - CLI lexicon subcommands (info, lookup, candidates, validate)
 
-### 📋 M3–M8
+### ✅ M3 — Protected Token Detection (complete)
+- Regex-based matchers (URL, email, phone, number, unit, money, percent, code, date)
+- Lexicon-based matcher (chemical terms from dictionary)
+- Conflict resolution (priority + longest-span + insertion-order)
+- Mask/restore roundtrip with placeholder tracking
+- YAML-configurable matcher registry
+
+### 📋 M4–M8
 See [PROJECT.md](PROJECT.md) for the full plan.
 
 ---
@@ -340,12 +406,24 @@ MAX_COMBINATIONS_PER_WINDOW = 5000
 
 All thresholds are configurable. File-based YAML/JSON configuration is planned.
 
+Protected token matchers are configured via YAML files in `resources/matchers/`:
+
+```yaml
+# Example: resources/matchers/number.yaml
+name: number
+priority: 10
+span_type: number
+patterns:
+  - '\b\d+(?:[.,]\d+)+\b'
+  - '\b\d+\b'
+```
+
 ---
 
 ## Testing
 
 ```bash
-# Run all tests
+# Run all tests (582 tests across 14 files)
 pytest
 
 # Run with verbose output
@@ -353,6 +431,7 @@ pytest -v
 
 # Run a specific test file
 pytest tests/test_normalizer.py
+pytest tests/test_protected_tokens.py
 ```
 
 ---
@@ -398,13 +477,16 @@ ruff check --fix src tests
 - [x] JsonLexiconStore — in-memory store loaded from built-in JSON resources
 - [x] SqliteLexiconStore — query-based store backed by stdlib sqlite3
 - [x] Syllable, word, unit, phrase, abbreviation, OCR confusion, and foreign-word indices
+- [x] Lexicon build pipeline with validation and metadata
 - [x] CLI lexicon subcommands (info, lookup, candidates, validate)
 
-### Milestone 3 — Protected Tokens
+### Milestone 3 — Protected Tokens ✅
 
-- [ ] Regex-based protected token detector
-- [ ] Domain lexicon protected matcher
-- [ ] Unit/number/code detector
+- [x] Regex-based protected token detector (URL, email, phone, number, unit, money, percent, code, date)
+- [x] Domain lexicon protected matcher (chemical terms)
+- [x] Priority-based conflict resolution
+- [x] Mask/restore roundtrip with placeholder tracking
+- [x] YAML-configurable matcher registry
 
 ### Milestone 4 — Candidate Generation
 
