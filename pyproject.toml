@@ -76,4 +76,7 @@ warn_unused_ignores = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+disable_error_code = [
+    "union-attr",  # tests access subtype-specific attrs on LexiconRecord
+]
 
