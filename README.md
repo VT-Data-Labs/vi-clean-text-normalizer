@@ -30,7 +30,7 @@ Primary use cases:
 
 ## Project Status
 
-> **Status:** Alpha — Milestone 1 (Basic Normalization) completed.
+> **Status:** ✅ Milestone 1 complete — basic normalization layer (normalizer, case masker, tokenizer)
 
 ### Implemented
 
@@ -230,6 +230,24 @@ src/vn_corrector/
 └── utils/
     └── unicode.py          # Vietnamese character detection
 ```
+
+---
+
+## Milestones
+
+### ✅ M1 — Basic Normalization (complete)
+- Unicode normalizer (NFC, control chars, whitespace)
+- Case masker (UPPER/LOWER/TITLE/MIXED/UNKNOWN, Vietnamese Đ/đ)
+- Tokenizer with roundtrip guarantee
+- 174 tests, CI pipeline
+
+### ⏳ M2 — Lexicon Builder (next)
+- Syllable lexicon builder
+- Word lexicon loader
+- JSON lexicon store
+
+### 📋 M3–M8
+See [ROADMAP.md](ROADMAP.md) for the full plan.
 
 ---
 
