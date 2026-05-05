@@ -8,10 +8,10 @@ Read `PROJECT.md` before making changes. If your implementation conflicts with `
 
 - Prefer modifying existing modules over creating new ones.
 - Search for existing constants, helpers, validators, and types before adding new ones.
-- Shared constants belong in `src/app/common/constants.py`.
-- Shared errors belong in `src/app/common/errors.py`.
-- Shared type definitions belong in `src/app/common/types.py`.
-- Shared validation helpers belong in `src/app/common/validation.py`.
+- Shared constants belong in `src/vn_corrector/common/constants.py`.
+- Shared errors belong in `src/vn_corrector/common/errors.py`.
+- Shared type definitions belong in `src/vn_corrector/common/types.py`.
+- Shared validation helpers belong in `src/vn_corrector/common/validation.py`.
 - Avoid duplicated logic. Code duplication longer than 5 lines is not allowed without justification.
 - Do not weaken tests to make them pass.
 - Do not remove error handling or validation unless explicitly required.
