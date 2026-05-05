@@ -1,5 +1,8 @@
 """Stage 0 + Stage 1: Input Normalization and Unicode Normalization.
 
+Backward-compatible re-exports. The actual implementation lives in
+the :mod:`~vn_corrector.stage1_normalize` package.
+
 Responsibilities:
 - Normalize Unicode to NFC.
 - Remove/replace invisible and control characters.
@@ -12,39 +15,26 @@ This module does NOT:
 - Use LLMs or external models.
 """
 
-import re
-import unicodedata
-
-# Invisible/control characters to remove entirely.
-# Preserves: \n (LF), \r (CR - normalized later), \t (tab - kept as token whitespace).
-_INVISIBLE_RE = re.compile(
-    r"[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f"  # C0 controls (keep \n\r\t)
-    r"\u00ad"  # soft hyphen
-    r"\u061c"  # arabic letter mark
-    r"\u200b-\u200f"  # zero-width space, ZWNJ, ZWJ, LRM, RLM
-    r"\u2028\u2029"  # line/paragraph separator (redundant with \n)
-    r"\u202a-\u202e"  # bidi overrides
-    r"\u2060-\u2064"  # word joiner, invisible operators
-    r"\ufeff"  # BOM / zero-width no-break space
-    r"]"
-)
-
-# Non-standard space characters → convert to regular space.
-_NONSTANDARD_SPACE_RE = re.compile(r"[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]")
+from vn_corrector.stage1_normalize.engine import normalize as _pipeline
+from vn_corrector.stage1_normalize.steps.invisible import remove_invisible as _rm_invisible
+from vn_corrector.stage1_normalize.steps.unicode import normalize_unicode as _unicode
+from vn_corrector.stage1_normalize.steps.whitespace import normalize_whitespace as _whitespace
 
 
 def normalize(text: str) -> str:
     """Apply the full normalization pipeline.
+
+    Returns the normalized text only (``str``).  For full observability
+    (stats, steps applied), use
+    :func:`vn_corrector.stage1_normalize.engine.normalize` which returns
+    a :class:`~vn_corrector.stage1_normalize.types.NormalizedDocument`.
 
     Steps:
     1. Unicode NFC normalization.
     2. Remove invisible/control characters.
     3. Normalize whitespace (line endings, non-standard spaces).
     """
-    text = normalize_unicode(text)
-    text = remove_invisible_characters(text)
-    text = normalize_whitespace(text)
-    return text
+    return _pipeline(text).normalized_text
 
 
 def normalize_unicode(text: str) -> str:
@@ -52,41 +42,27 @@ def normalize_unicode(text: str) -> str:
 
     NFC composes decomposed characters (NFD/NFKD) into their canonical
     precomposed forms, which is the standard for Vietnamese text.
-
-    Examples:
-        'n̂' (n + combining circumflex) → 'n'  (not canonical)
-        Actually NFC ensures canonical compositions are used.
-
     """
-    return unicodedata.normalize("NFC", text)
+    return _unicode(text)[0]
 
 
 def remove_invisible_characters(text: str) -> str:
-    r"""Remove invisible and non-printing control characters.
+    """Remove invisible and non-printing control characters.
 
     Preserves:
-    - \n (newline), \r (carriage return), \t (tab)
+    - \\n (newline), \\r (carriage return), \\t (tab)
     - Printable characters including Vietnamese letters
     - Normal punctuation and symbols
     """
-    return _INVISIBLE_RE.sub("", text)
+    return _rm_invisible(text)[0]
 
 
 def normalize_whitespace(text: str) -> str:
     r"""Normalize whitespace while preserving intentional newlines.
 
     - Converts non-standard spaces (NBSP, thin space, etc.) to regular space.
-    - Normalizes line endings: \r\n → \n, standalone \r → \n.
+    - Normalizes line endings: \\r\\n → \\n, standalone \\r → \\n.
     - Does NOT collapse multiple spaces (preserves formatting).
     - Does NOT trim leading/trailing whitespace.
-
-    Returns:
-        Text with normalized line endings and standard spaces.
-
     """
-    # Normalize line endings
-    text = text.replace("\r\n", "\n")
-    text = text.replace("\r", "\n")
-    # Convert non-standard spaces to regular space
-    text = _NONSTANDARD_SPACE_RE.sub(" ", text)
-    return text
+    return _whitespace(text)[0]
