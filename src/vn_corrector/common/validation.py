@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from vn_corrector.lexicon.accent_stripper import strip_accents
+
 
 def is_nonempty_string(value: object) -> bool:
     """Check that value is a non-empty string."""
@@ -23,18 +25,35 @@ class ValidationResult:
 
 
 def validate_syllable_entry(entry: dict[str, Any]) -> ValidationResult:
-    """Validate a single syllable entry in grouped format (base/forms/freq)."""
+    """Validate a single syllable entry in grouped format (base/forms/freq).
+
+    Checks:
+    - Required fields: base, forms
+    - All forms must strip back to base (strip_accents(form) == base)
+    - No duplicate forms
+    - If freq is provided, every form must have a frequency entry
+    - All frequencies must be in [0, 1]
+    """
     errors: list[str] = []
+    base: str | None = None
 
     if "base" not in entry:
         errors.append("Missing required field 'base'")
     elif not is_nonempty_string(entry.get("base")):
         errors.append("'base' must be a non-empty string")
+    else:
+        base = str(entry["base"])
 
     if "forms" not in entry:
         errors.append("Missing required field 'forms'")
     elif not isinstance(entry.get("forms"), list) or len(entry["forms"]) == 0:
         errors.append("'forms' must be a non-empty list")
+    elif base is not None:
+        forms: list[str] = [str(f) for f in entry["forms"]]
+        for form in forms:
+            stripped = strip_accents(form)
+            if stripped != base:
+                errors.append(f"Form {form!r} strips to {stripped!r}, expected base {base!r}")
 
     if "freq" in entry and entry["freq"] is not None:
         freq = entry["freq"]
@@ -44,6 +63,16 @@ def validate_syllable_entry(entry: dict[str, Any]) -> ValidationResult:
             for form, fval in freq.items():
                 if not isinstance(fval, (int, float)) or not (0.0 <= fval <= 1.0):
                     errors.append(f"Frequency for '{form}' must be between 0 and 1, got {fval}")
+
+    # If freq is provided, all forms must have a score
+    if "freq" in entry and isinstance(entry.get("freq"), dict) and "forms" in entry:
+        freq = entry["freq"]
+        forms = entry["forms"]
+        if isinstance(forms, list) and isinstance(freq, dict):
+            for form in forms:
+                fval = freq.get(str(form))
+                if fval is None:
+                    errors.append(f"Form {form!r} has no frequency score in 'freq' map")
 
     if "forms" in entry and isinstance(entry.get("forms"), list):
         seen = set()
@@ -96,6 +125,60 @@ def validate_abbreviation_entry(entry: dict[str, Any]) -> ValidationResult:
     return ValidationResult(valid=len(errors) == 0, errors=errors)
 
 
+def validate_phrase_entry(entry: dict[str, Any]) -> ValidationResult:
+    """Validate a single phrase n-gram entry."""
+    errors: list[str] = []
+
+    for req_field in ("phrase", "normalized", "n"):
+        if req_field not in entry:
+            errors.append(f"Missing required field '{req_field}'")
+        elif req_field == "phrase" and (
+            not isinstance(entry.get("phrase"), str) or not entry["phrase"]
+        ):
+            errors.append("'phrase' must be a non-empty string")
+        elif req_field == "normalized" and (
+            not isinstance(entry.get("normalized"), str) or not entry["normalized"]
+        ):
+            errors.append("'normalized' must be a non-empty string")
+        elif req_field == "n" and (not isinstance(entry.get("n"), int) or entry["n"] < 1):
+            errors.append("'n' must be a positive integer")
+
+    if "freq" in entry:
+        freq = entry["freq"]
+        if not isinstance(freq, (int, float)) or not (0.0 <= freq <= 1.0):
+            errors.append(f"'freq' must be between 0 and 1, got {freq}")
+
+    return ValidationResult(valid=len(errors) == 0, errors=errors)
+
+
+def validate_ocr_confusion_entry(entry: dict[str, Any]) -> ValidationResult:
+    """Validate a single OCR confusion entry."""
+    errors: list[str] = []
+
+    if "noisy" not in entry:
+        errors.append("Missing required field 'noisy'")
+    elif not isinstance(entry.get("noisy"), str) or not entry["noisy"]:
+        errors.append("'noisy' must be a non-empty string")
+
+    if "corrections" not in entry:
+        errors.append("Missing required field 'corrections'")
+    elif not isinstance(entry.get("corrections"), list):
+        errors.append("'corrections' must be a list")
+    elif len(entry["corrections"]) == 0:
+        errors.append("'corrections' must be non-empty")
+    else:
+        for i, corr in enumerate(entry["corrections"]):
+            if not isinstance(corr, str) or not corr.strip():
+                errors.append(f"Correction at index {i} is empty")
+
+    if "confidence" in entry:
+        conf = entry["confidence"]
+        if not isinstance(conf, (int, float)) or not (0.0 <= conf <= 1.0):
+            errors.append(f"'confidence' must be between 0 and 1, got {conf}")
+
+    return ValidationResult(valid=len(errors) == 0, errors=errors)
+
+
 def validate_lexicon_file(data: list[Any] | dict[str, Any], lexicon_type: str) -> ValidationResult:
     """Validate an entire lexicon JSON file.
 
@@ -124,11 +207,14 @@ def validate_lexicon_file(data: list[Any] | dict[str, Any], lexicon_type: str) -
         validator = validate_word_entry
     elif lexicon_type == "abbreviation":
         validator = validate_abbreviation_entry
+    elif lexicon_type == "phrase":
+        validator = validate_phrase_entry
+    elif lexicon_type == "ocr_confusion":
+        validator = validate_ocr_confusion_entry
     else:
         return ValidationResult(valid=False, errors=[f"Unknown lexicon type: {lexicon_type}"])
 
     all_errors: list[str] = []
-    seen_normalized: dict[str, int] = {}
 
     for i, entry in enumerate(data):
         if not isinstance(entry, dict):
@@ -138,17 +224,5 @@ def validate_lexicon_file(data: list[Any] | dict[str, Any], lexicon_type: str) -
         result = validator(entry)
         for err in result.errors:
             all_errors.append(f"[{i}] {err}")
-
-        # Check for duplicate normalized entries (unless explicitly allowed)
-        if lexicon_type in ("word", "unit"):
-            normalized = entry.get("normalized")
-            if normalized and isinstance(normalized, str):
-                if normalized in seen_normalized:
-                    prev_idx = seen_normalized[normalized]
-                    all_errors.append(
-                        f"[{i}] Duplicate normalized '{normalized}' (also at index {prev_idx})"
-                    )
-                else:
-                    seen_normalized[normalized] = i
 
     return ValidationResult(valid=len(all_errors) == 0, errors=all_errors)

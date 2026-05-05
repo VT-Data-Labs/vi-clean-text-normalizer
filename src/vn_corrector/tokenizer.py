@@ -5,7 +5,7 @@ Whitespace, punctuation, and newlines are preserved verbatim so the
 original text can always be reconstructed.
 """
 
-from vn_corrector.common.types import Token
+from vn_corrector.common.types import TextSpan, Token, TokenType
 from vn_corrector.utils.unicode import contains_vietnamese
 
 
@@ -49,20 +49,21 @@ def tokenize(text: str) -> list[Token]:
             i += 1
 
         token_text = text[start:i]
+        span = TextSpan(start=start, end=i)
 
         if cls == "LETTER":
-            token_type = "VI_WORD" if contains_vietnamese(token_text) else "FOREIGN_WORD"
-            tokens.append(Token(token_text, token_type))
+            tt = TokenType.VI_WORD if contains_vietnamese(token_text) else TokenType.FOREIGN_WORD
+            tokens.append(Token(text=token_text, token_type=tt, span=span))
         elif cls == "NUMBER":
-            tokens.append(Token(token_text, "NUMBER"))
+            tokens.append(Token(text=token_text, token_type=TokenType.NUMBER, span=span))
         elif cls == "NEWLINE":
-            tokens.append(Token(token_text, "NEWLINE"))
+            tokens.append(Token(text=token_text, token_type=TokenType.NEWLINE, span=span))
         elif cls == "SPACE":
-            tokens.append(Token(token_text, "SPACE"))
+            tokens.append(Token(text=token_text, token_type=TokenType.SPACE, span=span))
         elif cls == "PUNCT":
-            tokens.append(Token(token_text, "PUNCT"))
+            tokens.append(Token(text=token_text, token_type=TokenType.PUNCT, span=span))
         else:
-            tokens.append(Token(token_text, "UNKNOWN"))
+            tokens.append(Token(text=token_text, token_type=TokenType.UNKNOWN, span=span))
 
     return tokens
 

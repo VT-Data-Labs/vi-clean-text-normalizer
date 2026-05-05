@@ -1,6 +1,11 @@
 """Tests for LexiconStore — loading, lookup, and membership."""
 
-from vn_corrector.common.types import AbbreviationEntry, LexiconEntry
+from vn_corrector.common.types import (
+    AbbreviationEntry,
+    LexiconEntry,
+    LexiconLookupResult,
+    OcrConfusionLookupResult,
+)
 from vn_corrector.lexicon.store import LexiconStore
 
 
@@ -35,17 +40,22 @@ class TestLexiconStoreLoad:
 
 
 class TestExactLookup:
+    def _surface_entries(
+        self, result: LexiconLookupResult
+    ) -> list[LexiconEntry | AbbreviationEntry]:
+        return [e for e in result.entries if isinstance(e, (LexiconEntry, AbbreviationEntry))]
+
     def test_lookup_syllable(self):
         store = LexiconStore.load_default()
         result = store.lookup("muỗng")
         assert result.found
-        assert any(e.surface == "muỗng" for e in result.entries)
+        assert any(e.surface == "muỗng" for e in self._surface_entries(result))
 
     def test_lookup_word(self):
         store = LexiconStore.load_default()
         result = store.lookup("số muỗng")
         assert result.found
-        assert any(e.surface == "số muỗng" for e in result.entries)
+        assert any(e.surface == "số muỗng" for e in self._surface_entries(result))
 
     def test_lookup_unknown(self):
         store = LexiconStore.load_default()
@@ -57,16 +67,26 @@ class TestExactLookup:
         store = LexiconStore.load_default()
         result = store.lookup("kg")
         assert result.found
-        entry = next(e for e in result.entries if isinstance(e, LexiconEntry) and e.surface == "kg")
+        entries = self._surface_entries(result)
+        entry = next(e for e in entries if isinstance(e, LexiconEntry) and e.surface == "kg")
         assert isinstance(entry, LexiconEntry) and entry.kind == "unit"
 
 
 class TestAccentlessLookup:
+    def _surfaces(self, result: LexiconLookupResult) -> set[str]:
+        return {
+            e.surface for e in result.entries if isinstance(e, (LexiconEntry, AbbreviationEntry))
+        }
+
     def test_accentless_known(self):
         store = LexiconStore.load_default()
         result = store.lookup_accentless("muỗng")
         assert result.found
-        assert any(e.surface == "muỗng" for e in result.entries)
+        assert any(
+            e.surface == "muỗng"
+            for e in result.entries
+            if isinstance(e, (LexiconEntry, AbbreviationEntry))
+        )
 
     def test_accentless_strips_accents(self):
         store = LexiconStore.load_default()
@@ -76,17 +96,15 @@ class TestAccentlessLookup:
 
     def test_accentless_returns_multiple_candidates(self):
         store = LexiconStore.load_default()
-        # "muong" has multiple forms: muỗng, mường, muông, muống, muồng, mượng
         result = store.lookup_accentless("muong")
         assert result.found
         assert len(result.entries) >= 2
 
     def test_accentless_ambiguous_candidates(self):
         store = LexiconStore.load_default()
-        # "so" has multiple forms: số, sổ, sờ, sơ, sợ, sở
         result = store.lookup_accentless("so")
         assert result.found
-        surfaces = {e.surface for e in result.entries}
+        surfaces = self._surfaces(result)
         assert "số" in surfaces
         assert "sổ" in surfaces
 
@@ -103,12 +121,21 @@ class TestAccentlessLookup:
 
     def test_accentless_duong_candidates(self):
         store = LexiconStore.load_default()
-        # "duong" has: đường, dương, duỗng, duồng, đượng
         result = store.lookup_accentless("duong")
         assert result.found
-        surfaces = {e.surface for e in result.entries}
+        surfaces = self._surfaces(result)
         assert "đường" in surfaces
         assert "dương" in surfaces
+
+    def test_accentless_hits_word_index(self):
+        store = LexiconStore.load_default()
+        result = store.lookup_accentless("quận")
+        assert result.found
+        kinds = {str(e.kind) for e in result.entries if hasattr(e, "kind")}
+        assert "syllable" in kinds
+        assert "word" in kinds
+        surfaces = self._surfaces(result)
+        assert "quận" in surfaces
 
 
 class TestLookupNoTone:
@@ -120,7 +147,9 @@ class TestLookupNoTone:
         store = LexiconStore.load_default()
         result = store.lookup_no_tone("duong")
         assert result.found
-        surfaces = {e.surface for e in result.entries}
+        surfaces = {
+            e.surface for e in result.entries if isinstance(e, (LexiconEntry, AbbreviationEntry))
+        }
         assert "đường" in surfaces
 
     def test_lookup_no_tone_unknown(self):
@@ -197,7 +226,7 @@ class TestAbbreviationLookup:
         assert result.found
         entry = result.entries[0]
         assert isinstance(entry, AbbreviationEntry)
-        assert entry.expansions == ["quận"]
+        assert entry.expansions == ("quận",)
 
     def test_abbreviation_entry_has_fields(self):
         store = LexiconStore.load_default()
@@ -205,7 +234,7 @@ class TestAbbreviationLookup:
         entry = result.entries[0]
         assert isinstance(entry, AbbreviationEntry)
         assert entry.surface == "2pn"
-        assert isinstance(entry.expansions, list)
+        assert isinstance(entry.expansions, tuple)
         assert len(entry.expansions) > 0
 
 
@@ -238,19 +267,19 @@ class TestMembership:
 
 
 class TestDataIntegrity:
-    def test_syllable_normalized_key(self):
+    def test_syllable_no_tone_key(self):
         store = LexiconStore.load_default()
         result = store.lookup_accentless("muong")
         for e in result.entries:
             if isinstance(e, LexiconEntry):
-                assert e.normalized == "muong"
+                assert e.no_tone == "muong"
 
     def test_word_kind_tag(self):
         store = LexiconStore.load_default()
         result = store.lookup("số muỗng")
         for e in result.entries:
             if isinstance(e, LexiconEntry):
-                assert e.kind in ("common_word", "phrase", "syllable")
+                assert str(e.kind) in ("word", "syllable")
 
     def test_unit_kind_tag(self):
         store = LexiconStore.load_default()
@@ -270,3 +299,152 @@ class TestDataIntegrity:
     def test_get_abbreviation_count(self):
         store = LexiconStore.load_default()
         assert store.get_abbreviation_count() > 0
+
+
+class TestPhraseLookup:
+    def test_phrases_loaded(self):
+        store = LexiconStore.load_default()
+        assert store.get_phrase_count() > 0
+
+    def test_lookup_phrase_exact(self):
+        store = LexiconStore.load_default()
+        results = store.lookup_phrase("số muỗng gạt ngang")
+        assert len(results) >= 1
+        assert results[0].phrase == "số muỗng gạt ngang"
+        assert results[0].n == 3
+
+    def test_lookup_phrase_normalized(self):
+        store = LexiconStore.load_default()
+        results = store.lookup_phrase_normalized("so muong gat ngang")
+        assert len(results) >= 1
+        assert results[0].phrase == "số muỗng gạt ngang"
+
+    def test_lookup_phrase_unknown(self):
+        store = LexiconStore.load_default()
+        results = store.lookup_phrase("xyzzy")
+        assert len(results) == 0
+
+    def test_phrase_has_domain(self):
+        store = LexiconStore.load_default()
+        results = store.lookup_phrase("số muỗng gạt ngang")
+        assert results[0].domain == "product_instruction"
+
+    def test_phrase_multi_word_n(self):
+        store = LexiconStore.load_default()
+        results = store.lookup_phrase("vừa đủ")
+        assert len(results) >= 1
+        assert results[0].n == 2
+
+
+class TestOcrConfusionLookup:
+    def _correction_texts(self, result: OcrConfusionLookupResult) -> set[str]:
+        return {c.text for c in result.corrections}
+
+    def test_confusions_loaded(self):
+        store = LexiconStore.load_default()
+        assert store.get_ocr_confusion_count() > 0
+
+    def test_known_confusion(self):
+        store = LexiconStore.load_default()
+        result = store.get_ocr_corrections("mùông")
+        assert result.found
+        texts = self._correction_texts(result)
+        assert "muỗng" in texts
+
+    def test_another_known_confusion(self):
+        store = LexiconStore.load_default()
+        result = store.get_ocr_corrections("rốt")
+        assert result.found
+        texts = self._correction_texts(result)
+        assert "rót" in texts
+
+    def test_unknown_confusion(self):
+        store = LexiconStore.load_default()
+        result = store.get_ocr_corrections("xyzzy")
+        assert not result.found
+        assert len(result.corrections) == 0
+
+    def test_confusion_with_multiple_corrections(self):
+        store = LexiconStore.load_default()
+        result = store.get_ocr_corrections("đẫn")
+        assert result.found
+        texts = self._correction_texts(result)
+        assert "dẫn" in texts
+        assert "dần" in texts
+
+    def test_get_all_confusions(self):
+        store = LexiconStore.load_default()
+        all_confusions = store.get_all_ocr_confusions()
+        assert isinstance(all_confusions, dict)
+        assert "mùông" in all_confusions
+        assert len(all_confusions) > 0
+
+    def test_du_confusion(self):
+        store = LexiconStore.load_default()
+        result = store.get_ocr_corrections("dủ")
+        assert result.found
+        texts = self._correction_texts(result)
+        assert "đủ" in texts
+
+
+class TestPublicAPI:
+    """Tests for the simplified public API methods."""
+
+    def test_lookup_syllable_known(self):
+        store = LexiconStore.load_default()
+        candidates = store.lookup_syllable("muong")
+        assert "muỗng" in candidates
+
+    def test_lookup_syllable_case_insensitive(self):
+        """'MÙÔNG' should return same result as 'muong'."""
+        store = LexiconStore.load_default()
+        upper = set(store.lookup_syllable("MÙÔNG"))
+        lower = set(store.lookup_syllable("muong"))
+        assert upper == lower
+
+    def test_lookup_syllable_accented_input(self):
+        """Accented input 'muỗng' should still look up by no-tone key."""
+        store = LexiconStore.load_default()
+        candidates = store.lookup_syllable("muỗng")
+        assert "muỗng" in candidates
+
+    def test_lookup_syllable_unknown(self):
+        store = LexiconStore.load_default()
+        candidates = store.lookup_syllable("zzzzz")
+        assert len(candidates) == 0
+
+    def test_lookup_unit_known(self):
+        store = LexiconStore.load_default()
+        entries = store.lookup_unit("kg")
+        assert len(entries) >= 1
+        assert entries[0].kind == "unit"
+
+    def test_lookup_unit_unknown(self):
+        store = LexiconStore.load_default()
+        entries = store.lookup_unit("xyzzy")
+        assert len(entries) == 0
+
+    def test_lookup_phrase_str_known(self):
+        store = LexiconStore.load_default()
+        result = store.lookup_phrase_str("so muong gat ngang")
+        assert result == "số muỗng gạt ngang"
+
+    def test_lookup_phrase_str_unknown(self):
+        store = LexiconStore.load_default()
+        result = store.lookup_phrase_str("xyzzy")
+        assert result is None
+
+    def test_lookup_ocr_known(self):
+        store = LexiconStore.load_default()
+        corrections = store.lookup_ocr("mùông")
+        assert "muỗng" in corrections
+
+    def test_lookup_ocr_unknown(self):
+        store = LexiconStore.load_default()
+        corrections = store.lookup_ocr("xyzzy")
+        assert len(corrections) == 0
+
+    def test_load_classmethod(self):
+        store = LexiconStore.load()
+        assert isinstance(store, LexiconStore)
+        assert store.get_ocr_confusion_count() > 0

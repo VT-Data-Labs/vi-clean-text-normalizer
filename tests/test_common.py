@@ -6,18 +6,19 @@ from vn_corrector.common.constants import (
     REPLACE_THRESHOLD,
     UNICODE_NORMALIZATION_FORM,
 )
-from vn_corrector.common.errors import (
-    CasePattern,
-    CorrectionFlagType,
-    DecisionType,
-)
 from vn_corrector.common.types import (
     CaseMask,
+    CasePattern,
+    ChangeReason,
     CorrectionChange,
     CorrectionDecision,
     CorrectionFlag,
     CorrectionResult,
+    DecisionType,
+    FlagType,
+    TextSpan,
     Token,
+    TokenType,
 )
 from vn_corrector.common.validation import is_nonempty_string, is_probability
 
@@ -33,43 +34,53 @@ class TestConstants:
 
 
 class TestErrorEnums:
-    def test_correction_flag_type_values(self):
-        assert CorrectionFlagType.AMBIGUOUS_DIACRITIC.value == "AMBIGUOUS_DIACRITIC"
-        assert CorrectionFlagType.UNKNOWN_TOKEN.value == "UNKNOWN_TOKEN"
+    def test_flag_type_values(self):
+        assert FlagType.UNKNOWN_TOKEN.value == "unknown_token"
+        assert FlagType.AMBIGUOUS_CANDIDATES.value == "ambiguous_candidates"
 
     def test_decision_type_values(self):
-        assert DecisionType.REPLACE.value == "REPLACE"
-        assert DecisionType.KEEP_ORIGINAL.value == "KEEP_ORIGINAL"
-        assert DecisionType.FLAG_AMBIGUOUS.value == "FLAG_AMBIGUOUS"
+        assert DecisionType.ACCEPT.value == "accept"
+        assert DecisionType.REJECT.value == "reject"
+        assert DecisionType.FLAG.value == "flag"
 
     def test_case_pattern_values(self):
-        assert CasePattern.UPPER.value == "UPPER"
-        assert CasePattern.LOWER.value == "LOWER"
-        assert CasePattern.TITLE.value == "TITLE"
+        assert CasePattern.UPPER.value == "upper"
+        assert CasePattern.LOWER.value == "lower"
+        assert CasePattern.TITLE.value == "title"
 
 
 class TestTypes:
     def test_correction_change_defaults(self):
-        c = CorrectionChange("x", "y", 0, 1, 0.95, "test")
+        c = CorrectionChange(
+            original="x",
+            replacement="y",
+            span=TextSpan(start=0, end=1),
+            confidence=0.95,
+            reason=ChangeReason.DIACRITIC_RESTORED,
+        )
         assert not c.candidate_sources
 
     def test_correction_flag_defaults(self):
-        f = CorrectionFlag("span", 0, 2, "AMBIGUOUS")
+        f = CorrectionFlag(
+            span_text="span",
+            span=TextSpan(start=0, end=2),
+            flag_type=FlagType.AMBIGUOUS_CANDIDATES,
+        )
         assert not f.candidates
         assert f.reason == ""
 
     def test_correction_result_defaults(self):
-        r = CorrectionResult("in", "out", 0.9)
+        r = CorrectionResult(original_text="in", corrected_text="out", confidence=0.9)
         assert not r.changes
         assert not r.flags
 
     def test_case_mask_holds_pattern(self):
-        m = CaseMask("RÓT", "rót", CasePattern.UPPER)
+        m = CaseMask(original="RÓT", working="rót", case_pattern=CasePattern.UPPER)
         assert m.original == "RÓT"
         assert m.case_pattern == CasePattern.UPPER
 
     def test_token_defaults(self):
-        t = Token("hello", "FOREIGN_WORD")
+        t = Token(text="hello", token_type=TokenType.FOREIGN_WORD, span=TextSpan(start=0, end=5))
         assert not t.protected
 
     def test_correction_decision_fields(self):
@@ -80,9 +91,9 @@ class TestTypes:
             second_best="mường",
             second_score=0.41,
             margin=0.52,
-            decision=DecisionType.REPLACE,
+            decision=DecisionType.ACCEPT,
         )
-        assert d.decision == DecisionType.REPLACE
+        assert d.decision == DecisionType.ACCEPT
         assert d.margin == 0.52
 
 
