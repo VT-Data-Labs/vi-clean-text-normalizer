@@ -8,6 +8,8 @@
 [![Lint](https://img.shields.io/badge/lint-ruff-purple.svg)](#code-quality)
 [![Type Checked](https://img.shields.io/badge/type--checked-mypy-blue.svg)](#code-quality)
 [![License](https://img.shields.io/github/license/Vi-Lang-Foundation/vi-clean-text-normalizer.svg)](LICENSE)
+[![codecov](https://img.shields.io/codecov/c/github/Vi-Lang-Foundation/vi-clean-text-normalizer)](https://codecov.io/gh/Vi-Lang-Foundation/vi-clean-text-normalizer)
+[![Codacy](https://app.codacy.com/project/badge/Grade/99d5369ee6f84e70bbdd16eb345d1c98)](https://app.codacy.com/gh/Vi-Lang-Foundation/vi-clean-text-normalizer/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Status](https://img.shields.io/badge/status-alpha-orange.svg)](#project-status)
 
 ---
