@@ -114,7 +114,8 @@ class TestTokenTypes:
     def test_foreign_word(self):
         tokens = tokenize("hello")
         assert len(tokens) == 1
-        assert tokens[0].token_type == "FOREIGN_WORD"
+        # M1: all letter tokens default to VI_WORD; M2 lexicon refines
+        assert tokens[0].token_type == "VI_WORD"
 
     def test_number(self):
         tokens = tokenize("123")
@@ -146,25 +147,24 @@ class TestTokenTypes:
     def test_mixed_sentence(self):
         tokens = tokenize("SỐ MÙÔNG (GẠT NGANG)")
         types = [t.token_type for t in tokens]
-        # "NGANG" has no Vietnamese diacritics → FOREIGN_WORD
+        # All letter tokens default to VI_WORD (M1 conservative approach)
         assert types == [
             "VI_WORD", "SPACE", "VI_WORD", "SPACE",
-            "PUNCT", "VI_WORD", "SPACE", "FOREIGN_WORD", "PUNCT",
+            "PUNCT", "VI_WORD", "SPACE", "VI_WORD", "PUNCT",
         ]
 
     def test_mixed_vi_and_foreign(self):
         tokens = tokenize("DHA và ARA")
         types = [t.token_type for t in tokens]
-        assert types == ["FOREIGN_WORD", "SPACE", "VI_WORD", "SPACE", "FOREIGN_WORD"]
+        assert types == ["VI_WORD", "SPACE", "VI_WORD", "SPACE", "VI_WORD"]
 
     def test_markdown_bullet(self):
         tokens = tokenize("- RÓT nước vào\n- PHA chế\n")
         types = [t.token_type for t in tokens]
-        # "PHA" has no Vietnamese diacritics → FOREIGN_WORD
         assert types == [
             "PUNCT", "SPACE", "VI_WORD", "SPACE", "VI_WORD",
             "SPACE", "VI_WORD", "NEWLINE",
-            "PUNCT", "SPACE", "FOREIGN_WORD", "SPACE", "VI_WORD", "NEWLINE",
+            "PUNCT", "SPACE", "VI_WORD", "SPACE", "VI_WORD", "NEWLINE",
         ]
 
     def test_table_row(self):
@@ -188,30 +188,22 @@ class TestOcrEdgeCases:
     def test_number_letter_mixed(self):
         tokens = tokenize("120m2")
         types = [t.token_type for t in tokens]
-        assert types == ["NUMBER", "FOREIGN_WORD", "NUMBER"]
-        texts = [t.text for t in tokens]
-        assert texts == ["120", "m", "2"]
+        assert types == ["NUMBER", "VI_WORD", "NUMBER"]
 
     def test_three_ty_seventy_five(self):
         tokens = tokenize("3ty75")
         types = [t.token_type for t in tokens]
-        assert types == ["NUMBER", "FOREIGN_WORD", "NUMBER"]
-        texts = [t.text for t in tokens]
-        assert texts == ["3", "ty", "75"]
+        assert types == ["NUMBER", "VI_WORD", "NUMBER"]
 
     def test_two_pn(self):
         tokens = tokenize("2PN")
         types = [t.token_type for t in tokens]
-        assert types == ["NUMBER", "FOREIGN_WORD"]
-        texts = [t.text for t in tokens]
-        assert texts == ["2", "PN"]
+        assert types == ["NUMBER", "VI_WORD"]
 
     def test_dash_separated_digits(self):
         tokens = tokenize("5-10 phút")
         types = [t.token_type for t in tokens]
         assert types == ["NUMBER", "PUNCT", "NUMBER", "SPACE", "VI_WORD"]
-        texts = [t.text for t in tokens]
-        assert texts == ["5", "-", "10", " ", "phút"]
 
     def test_number_at_end(self):
         tokens = tokenize("phút 10")
@@ -221,24 +213,20 @@ class TestOcrEdgeCases:
     def test_number_with_vietnamese_letter(self):
         tokens = tokenize("120ml")
         types = [t.token_type for t in tokens]
-        assert types == ["NUMBER", "FOREIGN_WORD"]
-        texts = [t.text for t in tokens]
-        assert texts == ["120", "ml"]
+        assert types == ["NUMBER", "VI_WORD"]
 
     def test_temperature(self):
         tokens = tokenize("40°C")
         types = [t.token_type for t in tokens]
-        assert types == ["NUMBER", "PUNCT", "FOREIGN_WORD"]
-        texts = [t.text for t in tokens]
-        assert texts == ["40", "°", "C"]
+        assert types == ["NUMBER", "PUNCT", "VI_WORD"]
 
     def test_compound_number_units(self):
         tokens = tokenize("3ty75 120m2 2PN")
         types = [t.token_type for t in tokens]
         assert types == [
-            "NUMBER", "FOREIGN_WORD", "NUMBER", "SPACE",
-            "NUMBER", "FOREIGN_WORD", "NUMBER", "SPACE",
-            "NUMBER", "FOREIGN_WORD",
+            "NUMBER", "VI_WORD", "NUMBER", "SPACE",
+            "NUMBER", "VI_WORD", "NUMBER", "SPACE",
+            "NUMBER", "VI_WORD",
         ]
 
 

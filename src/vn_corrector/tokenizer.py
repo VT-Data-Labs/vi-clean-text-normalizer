@@ -51,7 +51,13 @@ def tokenize(text: str) -> list[Token]:
         token_text = text[start:i]
 
         if cls == "LETTER":
-            token_type = "VI_WORD" if contains_vietnamese(token_text) else "FOREIGN_WORD"
+            # Default all letter-only tokens to VI_WORD for M1.
+            # Without a lexicon we cannot distinguish between ASCII Vietnamese
+            # words (e.g. "NGANG") and foreign words (e.g. "hello").
+            # The conservative choice is to let the correction pipeline examine
+            # all letter tokens; M2 (lexicon) and M3 (protected tokens) will
+            # refine the classification.
+            token_type = "VI_WORD" if contains_vietnamese(token_text) else "VI_WORD"
             tokens.append(Token(token_text, token_type))
         elif cls == "NUMBER":
             tokens.append(Token(token_text, "NUMBER"))
