@@ -243,31 +243,26 @@ def _populate_trusted_jsonl(conn: sqlite3.Connection, jsonl_path: str | Path) ->
                 continue
 
             surface = raw.get("surface", "")
-            normalized = raw.get("normalized", "")
             no_tone = raw.get("no_tone", "")
-            kind_str = raw.get("kind", "word")
-            score_dict = raw.get("score", {})
-            provenance_dict = raw.get("provenance", {})
-            tags = raw.get("tags", [])
-            domain = raw.get("domain")
-
             if not surface or not no_tone:
                 continue
-
-            confidence = float(score_dict.get("confidence", 1.0))
-            frequency = float(score_dict.get("frequency", 0.0))
-            source = provenance_dict.get("source", "external-dictionary")
-            tags_json = json.dumps(tags, ensure_ascii=False)
+            normalized = raw.get("normalized", "") or surface
+            kind_str = raw.get("kind", "word")
+            provenance = raw.get("provenance", {})
+            source = provenance.get("source", "external-dictionary")
+            tags_json = json.dumps(raw.get("tags", []), ensure_ascii=False)
+            conf = float(raw.get("score", {}).get("confidence", 1.0))
+            freq = float(raw.get("score", {}).get("frequency", 0.0))
+            domain = raw.get("domain")
 
             if kind_str == "phrase":
-                n = len(surface.split())
                 phrase_rows.append(
                     (
                         surface,
-                        normalized or surface,
+                        normalized,
                         no_tone,
-                        n,
-                        frequency or confidence,
+                        len(surface.split()),
+                        freq or conf,
                         domain,
                         tags_json,
                     )
@@ -276,13 +271,13 @@ def _populate_trusted_jsonl(conn: sqlite3.Connection, jsonl_path: str | Path) ->
                 word_rows.append(
                     (
                         surface,
-                        normalized or surface,
+                        normalized,
                         no_tone,
                         kind_str,
                         kind_str,
                         source,
-                        confidence,
-                        frequency,
+                        conf,
+                        freq,
                         domain,
                         tags_json,
                     )
@@ -325,6 +320,7 @@ def _write_build_metadata(conn: sqlite3.Connection, metadata: dict[str, str]) ->
 
 
 def _count_table(conn: sqlite3.Connection, table: str) -> int:
+    """Return the row count for *table*."""
     row = conn.execute(f"SELECT COUNT(*) AS cnt FROM {table}").fetchone()
     return row[0] if row else 0
 
@@ -399,6 +395,7 @@ def build_lexicon_db(
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Build the official SQLite runtime lexicon database",
     )

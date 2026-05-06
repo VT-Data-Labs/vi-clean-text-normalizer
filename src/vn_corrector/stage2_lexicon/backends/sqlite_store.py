@@ -496,10 +496,9 @@ def _row_to_lexicon_entry(
     no_tone: str = r.get("no_tone") or strip_accents(surface)
     normalized: str = r.get("normalized", surface)
     confidence = float(r.get("confidence", freq))
-    source_str: str | None = r.get("source")
-    if source_str and source_str in LexiconSource._value2member_map_:
-        source = LexiconSource(source_str)
-    else:
+    try:
+        source = LexiconSource(r["source"]) if r.get("source") else LexiconSource.BUILT_IN
+    except ValueError:
         source = LexiconSource.BUILT_IN
     raw_tags = r.get("tags")
     tags: tuple[str, ...] = tuple(json.loads(raw_tags)) if raw_tags else ("word",)

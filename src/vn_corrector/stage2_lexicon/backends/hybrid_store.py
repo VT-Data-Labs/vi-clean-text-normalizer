@@ -34,10 +34,12 @@ class HybridLexiconStore(LexiconStore):
 
     @property
     def primary(self) -> LexiconStore:
+        """The primary store."""
         return self._primary
 
     @property
     def fallback(self) -> LexiconStore:
+        """The fallback store (used on primary miss)."""
         return self._fallback
 
     # -- Core new methods -----------------------------------------------------
