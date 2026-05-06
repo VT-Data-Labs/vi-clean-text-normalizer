@@ -4,7 +4,7 @@
 Usage
 -----
     python scripts/build_trusted_lexicon.py \\
-        --output resources/lexicon/trusted_words.vi.jsonl \\
+        --output data/lexicon/trusted_words.vi.jsonl \\
         --sqlite data/lexicon/trusted_lexicon.db
 
 Sources
@@ -403,7 +403,7 @@ def build_trusted_lexicon(
     data_dir = data_dir or Path("data/raw")
 
     # Load all sources
-    loaders: list[tuple[str, str, callable]] = [
+    loaders: list[tuple[str, str, Any]] = [
         ("UVD-1", "uvd1.txt", load_uvd1),
         ("underthesea_merged", "underthesea_merged.txt", load_underthesea_merged),
         ("Aspell", "aspell_vi.dic", load_aspell),
@@ -483,7 +483,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--output",
-        default="resources/lexicon/trusted_words.vi.jsonl",
+        default="data/lexicon/trusted_words.vi.jsonl",
         help="Output JSONL path",
     )
     parser.add_argument(

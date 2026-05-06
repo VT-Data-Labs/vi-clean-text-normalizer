@@ -13,7 +13,6 @@ original :class:`~vn_corrector.lexicon.store.LexiconStore` are preserved.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from vn_corrector.common.types import (
@@ -28,10 +27,6 @@ from vn_corrector.stage2_lexicon.core.types import LexiconIndex
 
 if TYPE_CHECKING:
     from vn_corrector.stage2_lexicon.backends.json_store import JsonLexiconStore
-
-_RESOURCE_DIR = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent / "resources" / "lexicons"
-)
 
 
 # ---------------------------------------------------------------------------
@@ -187,11 +182,14 @@ class LexiconStore(ABC):
 
         This is a concrete convenience method so that consumers can write
         ``LexiconStore.load_default()`` without importing a specific backend.
-        Returns a :class:`~vn_corrector.stage2_lexicon.backends.json_store.JsonLexiconStore`.
+
+        .. deprecated::
+            Use ``load_default_lexicon("json")`` or ``load_default_lexicon("sqlite")``
+            for explicit backend selection.
         """
         from vn_corrector.stage2_lexicon.backends.json_store import JsonLexiconStore
 
-        return JsonLexiconStore.load_default()
+        return JsonLexiconStore.from_resources()
 
 
 __all__ = [

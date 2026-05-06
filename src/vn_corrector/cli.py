@@ -13,13 +13,24 @@ from dataclasses import asdict
 from typing import Any, cast
 
 from vn_corrector.common.types import CorrectionResult
-from vn_corrector.stage2_lexicon import LexiconStore
+from vn_corrector.stage2_lexicon import LexiconStore, load_default_lexicon
 from vn_corrector.stage2_lexicon.backends.json_store import load_json_resource
 
 
 def _build_lexicon_parser(subparsers: Any) -> argparse.ArgumentParser:
     """Add the 'lexicon' subcommand parser."""
     lex_parser = subparsers.add_parser("lexicon", help="Lexicon inspection tools")
+    lex_parser.add_argument(
+        "--lexicon-mode",
+        choices=["json", "sqlite", "hybrid"],
+        default="json",
+        help="Lexicon backend mode (default: json)",
+    )
+    lex_parser.add_argument(
+        "--lexicon-db",
+        default=None,
+        help="Path to SQLite lexicon DB (for sqlite/hybrid modes)",
+    )
     lex_sub = lex_parser.add_subparsers(dest="lex_subcommand", required=True)
 
     # lexicon info
@@ -122,7 +133,11 @@ def _lexicon_validate() -> None:
 
 def _run_lexicon(args: argparse.Namespace) -> None:
     """Dispatch lexicon subcommands."""
-    store = LexiconStore.load_default()
+    from pathlib import Path
+
+    mode: str = getattr(args, "lexicon_mode", "json")
+    db_path = Path(args.lexicon_db) if getattr(args, "lexicon_db", None) else None
+    store = load_default_lexicon(mode, db_path=db_path)  # type: ignore[arg-type]
 
     if args.lex_subcommand == "info":
         _lexicon_info(store)
