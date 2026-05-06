@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "language": "vi",
+  "bigrams": {
+    "cụ pha": 0.9,
+    "dẫn sử": 0.85,
+    "dụng cụ": 0.9,
+    "gạt ngang": 0.9,
+    "hướng dẫn": 0.85,
+    "kiểm tra": 0.85,
+    "làm nguội": 0.85,
+    "muỗng gạt": 0.9,
+    "nguội nhanh": 0.85,
+    "nhiệt độ": 0.85,
+    "nước vào": 0.9,
+    "pha chế": 0.9,
+    "rót nước": 0.9,
+    "số muỗng": 0.9,
+    "sử dụng": 0.85,
+    "tra nhiệt": 0.85,
+    "vào dụng": 0.9,
+    "vừa đủ": 0.75
+  },
+  "trigrams": {
+    "cụ pha chế": 0.9,
+    "dẫn sử dụng": 0.85,
+    "dụng cụ pha": 0.9,
+    "hướng dẫn sử": 0.85,
+    "kiểm tra nhiệt": 0.85,
+    "làm nguội nhanh": 0.85,
+    "muỗng gạt ngang": 0.9,
+    "nước vào dụng": 0.9,
+    "rót nước vào": 0.9,
+    "số muỗng gạt": 0.9,
+    "tra nhiệt độ": 0.85,
+    "vào dụng cụ": 0.9
+  },
+  "fourgrams": {
+    "dụng cụ pha chế": 0.9,
+    "hướng dẫn sử dụng": 0.85,
+    "kiểm tra nhiệt độ": 0.85,
+    "nước vào dụng cụ": 0.9,
+    "rót nước vào dụng": 0.9,
+    "số muỗng gạt ngang": 0.9,
+    "vào dụng cụ pha": 0.9
+  },
+  "domain_phrases": {
+    "generic": {
+      "gạt ngang": 0.8,
+      "hướng dẫn sử dụng": 0.85,
+      "vừa đủ": 0.75
+    },
+    "product_instruction": {
+      "kiểm tra nhiệt độ": 0.85,
+      "làm nguội": 0.8,
+      "làm nguội nhanh": 0.85,
+      "muỗng gạt": 0.8,
+      "nguội nhanh": 0.8,
+      "rót nước vào dụng cụ pha chế": 0.9,
+      "số muỗng": 0.85,
+      "số muỗng gạt ngang": 0.9
+    }
+  },
+  "negative_phrases": {
+    "làm người nhanh": 0.15,
+    "lâm người nhanh": 0.05,
+    "số mường gạt ngang": 0.05
+  }
+}
