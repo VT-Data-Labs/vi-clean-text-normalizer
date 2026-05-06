@@ -32,7 +32,7 @@ Primary use cases:
 
 ## Project Status
 
-> **Status:** ✅ Milestone 3 complete — protected token detection (normalizer + case masker + tokenizer + lexicon + protected tokens)
+> **Status:** ✅ Milestone 4 complete — candidate generation with 8 source generators
 
 ### Implemented
 
@@ -41,19 +41,23 @@ Primary use cases:
 - [x] Tokenization with roundtrip reconstruction guarantee
 - [x] Protected token detection (URL, email, phone, number, unit, money, percent, code, date, chemical terms)
 - [x] Regex and lexicon-based matchers with conflict resolution
-- [x] Backend-agnostic lexicon store with ABC interface (JSON + SQLite)
+- [x] Backend-agnostic lexicon store (`LexiconStoreInterface` ABC — JSON + SQLite)
 - [x] Built-in JSON resources (syllables, words, units, phrases, abbreviations, OCR confusions, foreign terms)
 - [x] Lexicon build pipeline (syllable, word, phrase, confusion, abbreviation builders)
 - [x] Vietnamese accent stripper for lookup key generation
 - [x] Shared types, constants, validation, and error enums
-- [x] CLI entrypoint (correction + lexicon subcommands)
+- [x] Candidate generation (8 source generators, merging, ranking, limit enforcement)
+- [x] Token-level cache with config-fingerprint invalidation
+- [x] Real-lexicon acceptance tests + golden YAML regression suite
+- [x] Benchmark script and debug CLI
+- [x] CLI entrypoint (correction + lexicon + candidates subcommands)
 - [x] CI pipeline (pytest + ruff + mypy + pre-commit)
-- [x] 734+ tests across 14 test files
+- [x] 854+ tests across 17 test files
 
 ### In Progress
 
 - [ ] Full correction pipeline (Stages 5–9)
-- [ ] Candidate generation and scoring
+- [ ] Candidate scoring and ranking
 - [ ] Decision engine
 - [ ] Evaluation harness
 - [ ] PyPI release
@@ -77,7 +81,9 @@ Primary use cases:
 - **Three explicit backends** — `JsonLexiconStore` (JSON resources only), `SqliteLexiconStore` (SQLite DB only), `HybridLexiconStore` (primary/fallback composition)
 - **Lexicon build pipeline** — `build_trusted_lexicon.py` generates trusted-word JSONL; `build_lexicon_db.py` compiles JSON resources + trusted JSONL into a single SQLite runtime DB
 - **SQLite backend** — query-based store using stdlib `sqlite3`, loads pre-built DB via `SqliteLexiconStore.from_db()`
-- **CLI interface** — single-text, batch file, interactive, JSON output modes, plus dedicated `lexicon` subcommands (info, lookup, candidates, validate)
+- **Candidate generation** — 8 source generators (original, syllable map, OCR confusion, word lexicon, abbreviation, phrase evidence, edit distance, domain-specific), deterministic ranking, limit enforcement, token cache
+- **CLI interface** — single-text, batch file, interactive, JSON output modes, plus dedicated subcommands: `lexicon` (info, lookup, candidates, validate) and `candidates` (debug candidate view)
+- **Benchmark script** — `scripts/bench_stage4_candidates.py` for token/sec, cache efficiency, candidate distribution
 
 ---
 
@@ -170,6 +176,51 @@ uv run corrector lexicon candidates muong
 
 # Validate all built-in lexicon resource files
 uv run corrector lexicon validate
+```
+
+### Candidate debug subcommand
+
+The `candidates` subcommand shows per-token candidate tables with sources and evidence:
+
+```bash
+# Show candidate debug view
+uv run corrector candidates "người đẫn đường"
+```
+
+Output:
+
+```text
+Input text: 'người đẫn đường'
+Tokens: 3
+
+Token[0] người
+  - người          prior=0.100  [original] (original)
+      evidence: [original] identity_candidate
+
+Token[1] đẫn
+  - đẫn            prior=0.100  [original] (original)
+      evidence: [original] identity_candidate
+  - dẫn            prior=0.500  [ocr_confusion, syllable_map]
+      evidence: [ocr_confusion] ocr_confusion: đẫn -> dẫn
+      evidence: [syllable_map] no_tone_key=dan
+  - dần            prior=0.200  [syllable_map]
+      evidence: [syllable_map] no_tone_key=dan
+```
+
+### Benchmark script
+
+```bash
+uv run python scripts/bench_stage4_candidates.py --tokens 5000 --cache
+```
+
+Output:
+
+```text
+Tokens: 5000
+Cache:  enabled
+...
+Tokens/sec:  ~15000
+Avg candidates:  ~2.3
 ```
 
 ### Batch and JSON modes
@@ -340,7 +391,7 @@ Stage 3: Protected Token Detection   ← implemented
   ↓
 Stage 4: Tokenization                ← implemented
   ↓
-Stage 5: Candidate Generation        ← not yet implemented
+Stage 5: Candidate Generation        ← implemented
   ↓
 Stage 6: Candidate Scoring           ← not yet implemented
   ↓
@@ -393,6 +444,24 @@ src/vn_corrector/
         ├── base.py          # Matcher ABC
         ├── regex.py         # RegexMatcher — pattern-based detection
         └── lexicon.py       # LexiconMatcher — dictionary-based detection
+└── stage4_candidates/       # Stage 5 — Candidate generation
+    ├── config.py            # CandidateGeneratorConfig
+    ├── generator.py         # CandidateGenerator orchestrator
+    ├── cache.py             # TokenCache with LRU eviction
+    ├── limits.py            # Candidate trimming + window enforcement
+    ├── ranking.py           # Deterministic prior-score ranking
+    ├── diagnostics.py       # Explainability helpers
+    ├── types.py             # Candidate, CandidateContext, CandidateProposal, etc.
+    └── sources/             # 8 source generators
+        ├── base.py          # CandidateSourceGenerator ABC
+        ├── original.py      # Identity / protected bypass
+        ├── syllable_map.py  # No-tone key → accented forms
+        ├── ocr_confusion.py # OCR confusion replacements
+        ├── word_lexicon.py  # Known dictionary words
+        ├── abbreviation.py  # Abbreviation expansion
+        ├── phrase_evidence.py  # Phrase-context tagging
+        ├── edit_distance.py # Controlled approximate matching
+        └── domain_specific.py  # Domain-filtered candidates
 ```
 
 ### Resource files
@@ -480,7 +549,7 @@ patterns:
 ## Testing
 
 ```bash
-# Run all tests (734+ tests across 14 files)
+# Run all tests (854+ tests across 17 files)
 pytest
 
 # Run with verbose output
@@ -489,11 +558,21 @@ pytest -v
 # Run a specific test file
 pytest tests/test_normalizer.py
 pytest tests/test_protected_tokens.py
+
+# Run Stage 4 tests
+pytest tests/stage4_candidates/
 ```
 
 ---
 
 ## Code Quality
+
+All code MUST follow these rules:
+
+- **Use abstract base classes (ABC), not `Protocol`** — shared interfaces use `ABC` with `@abstractmethod`
+- **No `Any` or `object` as type annotations** — use concrete types, generic types, or union types
+- **No `# type: ignore` or `# noqa` suppression comments**
+- **DRY — single source of truth** in `src/vn_corrector/common/` and `stage1_normalize/char_normalizer.py`
 
 ```bash
 # Lint and format
@@ -548,11 +627,20 @@ ruff check --fix src tests
 - [x] Mask/restore roundtrip with placeholder tracking
 - [x] YAML-configurable matcher registry
 
-### Milestone 4 — Candidate Generation
+### Milestone 4 — Candidate Generation ✅
 
-- [ ] OCR confusion map loader
-- [ ] Syllable map candidate generation
-- [ ] Candidate source tracking
+- [x] `LexiconStoreInterface` ABC shared between stage2 and stage4
+- [x] 8 source generators: original, syllable map, OCR confusion, word lexicon, abbreviation, phrase evidence, edit distance, domain-specific
+- [x] Deterministic ranking with prior-score weighting
+- [x] Token-level LRU cache with config-fingerprint invalidation
+- [x] Candidate deduplication and evidence merging
+- [x] Limit enforcement (per-token max, window combination cap)
+- [x] Protected token bypass
+- [x] Diagnostics / explainability helpers
+- [x] Real-lexicon acceptance tests + golden YAML regression (20+11 cases)
+- [x] Benchmark script (`scripts/bench_stage4_candidates.py`)
+- [x] Debug CLI (`corrector candidates "text"`)
+- [x] Strong typing: ABC interfaces, no `Protocol`, no `Any`, no `object`
 
 ### Milestone 5 — N-Gram Phrase Scorer
 

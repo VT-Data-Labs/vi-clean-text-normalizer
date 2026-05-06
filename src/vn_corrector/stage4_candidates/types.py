@@ -17,6 +17,8 @@ from vn_corrector.common.types import (
 )
 from vn_corrector.stage4_candidates.config import CandidateGeneratorConfig
 
+MetadataValue = str | int | float | bool | None
+
 # ---------------------------------------------------------------------------
 # Candidate source enumeration
 # ---------------------------------------------------------------------------
@@ -49,7 +51,7 @@ class CandidateEvidence:
     confidence_hint: float = 0.0
     matched_text: str | None = None
     matched_key: str | None = None
-    metadata: Mapping[str, object] = field(default_factory=dict)
+    metadata: Mapping[str, MetadataValue] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -165,5 +167,6 @@ __all__ = [
     "CandidateProposal",
     "CandidateRequest",
     "CandidateSource",
+    "MetadataValue",
     "TokenCandidates",
 ]

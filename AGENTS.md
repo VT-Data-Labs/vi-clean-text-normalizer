@@ -19,6 +19,9 @@ Read `PROJECT.md` before making changes. If your implementation conflicts with `
 - Search for existing constants, helpers, validators, and types before adding new ones.
 - **If a function exists in `stage1_normalize/` or `common/`, import it — do not reimplement.**
 - Prefer modifying existing modules over creating new ones.
+- **Use abstract base classes (ABC), never `Protocol`** — shared interfaces must inherit from `ABC` with `@abstractmethod`. No `from typing import Protocol`.
+- **No `Any` or `object` as type annotations** — use concrete types, generic types (`list[str]`, `dict[str, int]`), or union types (`str | int`). Sentinels (`_SENTINEL = object()`) are the only exception.
+- **No `# type: ignore` or `# noqa` suppression comments** — fix the underlying type or lint issue instead.
 
 ### Shared module locations
 
