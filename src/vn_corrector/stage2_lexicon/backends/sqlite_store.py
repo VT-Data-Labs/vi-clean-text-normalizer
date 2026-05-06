@@ -497,7 +497,10 @@ def _row_to_lexicon_entry(
     normalized: str = r.get("normalized", surface)
     confidence = float(r.get("confidence", freq))
     source_str: str | None = r.get("source")
-    source = LexiconSource(source_str) if source_str and source_str in LexiconSource._value2member_map_ else LexiconSource.BUILT_IN
+    if source_str and source_str in LexiconSource._value2member_map_:
+        source = LexiconSource(source_str)
+    else:
+        source = LexiconSource.BUILT_IN
     raw_tags = r.get("tags")
     tags: tuple[str, ...] = tuple(json.loads(raw_tags)) if raw_tags else ("word",)
     raw_kind = r.get("kind")

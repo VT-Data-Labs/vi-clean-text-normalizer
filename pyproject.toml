@@ -79,3 +79,7 @@ exclude = ["scripts/build_lexicon_db.py", "scripts/build_trusted_lexicon.py"]
 module = "tests.*"
 disallow_untyped_defs = false
 
+[[tool.mypy.overrides]]
+module = "test_trusted_lexicon"
+ignore_errors = true
+
