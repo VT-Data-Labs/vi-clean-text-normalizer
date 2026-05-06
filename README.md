@@ -32,7 +32,7 @@ Primary use cases:
 
 ## Project Status
 
-> **Status:** ✅ Milestone 4 complete — candidate generation with 8 source generators
+> **Status:** ✅ Milestone 5 complete — n-gram phrase scorer with deterministic context-aware ranking
 
 ### Implemented
 
@@ -41,32 +41,36 @@ Primary use cases:
 - [x] Tokenization with roundtrip reconstruction guarantee
 - [x] Protected token detection (URL, email, phone, number, unit, money, percent, code, date, chemical terms)
 - [x] Regex and lexicon-based matchers with conflict resolution
-- [x] Backend-agnostic lexicon store (`LexiconStoreInterface` ABC — JSON + SQLite)
+- [x] Backend-agnostic lexicon store (`LexiconStoreInterface` ABC — JSON + SQLite + Hybrid)
 - [x] Built-in JSON resources (syllables, words, units, phrases, abbreviations, OCR confusions, foreign terms)
 - [x] Lexicon build pipeline (syllable, word, phrase, confusion, abbreviation builders)
 - [x] Vietnamese accent stripper for lookup key generation
 - [x] Shared types, constants, validation, and error enums
-- [x] Candidate generation (8 source generators, merging, ranking, limit enforcement)
-- [x] Token-level cache with config-fingerprint invalidation
+- [x] Candidate generation (8 source generators, merging, ranking, limit enforcement, LRU cache)
 - [x] Real-lexicon acceptance tests + golden YAML regression suite
 - [x] Benchmark script and debug CLI
 - [x] CLI entrypoint (correction + lexicon + candidates subcommands)
 - [x] CI pipeline (pytest + ruff + mypy + pre-commit)
-- [x] 854+ tests across 17 test files
-
-### In Progress
-
-- [ ] Full correction pipeline (Stages 5–9)
-- [ ] Candidate scoring and ranking
-- [ ] Decision engine
-- [ ] Evaluation harness
-- [ ] PyPI release
+- [x] **N-gram phrase scoring** — `PhraseScorer` with 8 deterministic signals (word validity, syllable freq, phrase n-gram, domain context, OCR confusion, edit distance, overcorrection penalty, negative phrase penalty)
+- [x] **Context-aware windowing** — bounded sliding windows around ambiguous tokens with merging
+- [x] **Candidate sequence ranking** — combinatorial generation with identity-path preservation and max-combination limits
+- [x] **Explainability** — per-token `CorrectionEvidence` with score deltas and JSON-serializable breakdowns
+- [x] **Curated phrase dataset** — `resources/phrases/` with 11 positive phrases, 3 negative phrases, and domain-specific entries
+- [x] **NgramStore ABC** — `JsonNgramStore` backend, `scripts/build_ngram_store.py` builder
+- [x] 949+ tests across 24 test files
 
 ### Known Limitations
 
 - APIs may change before `v1.0.0`.
 - Correction logic beyond basic normalization and protected token masking is not yet wired.
 - See [PROJECT.md](PROJECT.md) for the full roadmap.
+
+### In Progress
+
+- [ ] Full correction pipeline (Stages 7–9)
+- [ ] Decision engine
+- [ ] Evaluation harness
+- [ ] PyPI release
 
 ---
 
@@ -82,6 +86,9 @@ Primary use cases:
 - **Lexicon build pipeline** — `build_trusted_lexicon.py` generates trusted-word JSONL; `build_lexicon_db.py` compiles JSON resources + trusted JSONL into a single SQLite runtime DB
 - **SQLite backend** — query-based store using stdlib `sqlite3`, loads pre-built DB via `SqliteLexiconStore.from_db()`
 - **Candidate generation** — 8 source generators (original, syllable map, OCR confusion, word lexicon, abbreviation, phrase evidence, edit distance, domain-specific), deterministic ranking, limit enforcement, token cache
+- **N-gram phrase scoring** — `PhraseScorer` with 8 deterministic signals (word validity, syllable freq, phrase n-gram, domain context, OCR confusion, edit distance, overcorrection penalty, negative phrase penalty), bounded windowing around ambiguous tokens, combinatorial sequence generation with identity-path preservation
+- **Explainability** — per-token `CorrectionEvidence` with score deltas, `ScoreBreakdown` with `total()` property, `format_explanation()` and `format_scored_window()` debug output
+- **Curated phrase data** — `resources/phrases/` with 11 positive phrases, 3 negative phrases, domain-specific entries; `scripts/build_ngram_store.py` builder generates a single merged `resources/ngrams/ngram_store.vi.json`
 - **CLI interface** — single-text, batch file, interactive, JSON output modes, plus dedicated subcommands: `lexicon` (info, lookup, candidates, validate) and `candidates` (debug candidate view)
 - **Benchmark script** — `scripts/bench_stage4_candidates.py` for token/sec, cache efficiency, candidate distribution
 
@@ -376,7 +383,7 @@ external dictionaries / corpus
 
 ## Architecture
 
-The full pipeline (Stages 5–9 in development):
+The full pipeline (Stages 7–9 in development):
 
 ```text
 OCR Raw Text
@@ -393,7 +400,7 @@ Stage 4: Tokenization                ← implemented
   ↓
 Stage 5: Candidate Generation        ← implemented
   ↓
-Stage 6: Candidate Scoring           ← not yet implemented
+Stage 6: Candidate Scoring           ← implemented (M5)
   ↓
 Stage 7: Correction Decision         ← not yet implemented
   ↓
@@ -462,6 +469,19 @@ src/vn_corrector/
         ├── phrase_evidence.py  # Phrase-context tagging
         ├── edit_distance.py # Controlled approximate matching
         └── domain_specific.py  # Domain-filtered candidates
+└── stage5_scorer/           # Stage 6 — N-gram phrase scorer
+    ├── config.py            # PhraseScorerConfig
+    ├── weights.py           # ScoringWeights dataclass
+    ├── types.py             # ScoreBreakdown, CandidateWindow, ScoredSequence, etc.
+    ├── ngram_store.py       # NgramStore ABC
+    ├── windowing.py         # Bounded window builder around ambiguous tokens
+    ├── combinations.py      # Candidate sequence generation with identity preservation
+    ├── scorer.py            # PhraseScorer with 8 deterministic signals
+    ├── explain.py           # format_explanation() for human-readable output
+    ├── diagnostics.py       # format_scored_window() debug output
+    └── backends/
+        ├── __init__.py
+        └── json_ngram_store.py  # JsonNgramStore — loads from resources/ngrams/ngram_store.vi.json
 ```
 
 ### Resource files
@@ -477,6 +497,13 @@ resources/
 │   ├── foreign_words.json   # Domain terms (chemical, brand, etc.)
 │   ├── ocr_confusions.vi.json  # Known OCR error patterns
 │   └── chemicals.txt        # Chemical term lexicon
+├── phrases/                 # Curated phrase datasets for M5 scorer
+│   ├── phrases.vi.json      # 11 positive phrases with domain tags
+│   ├── negative_phrases.vi.json  # 3 known-bad sequences (overcorrection prevention)
+│   └── domains/
+│       └── product_instruction.vi.json
+├── ngrams/                  # Generated n-gram store (from scripts/build_ngram_store.py)
+│   └── ngram_store.vi.json  # Merged bigrams/trigrams/fourgrams + domain + negative
 ├── matchers/                # YAML matcher configurations
 │   ├── url.yaml, email.yaml, phone.yaml
 │   ├── number.yaml, unit.yaml, money.yaml, percent.yaml
@@ -549,7 +576,7 @@ patterns:
 ## Testing
 
 ```bash
-# Run all tests (854+ tests across 17 files)
+# Run all tests (949+ tests across 24 files)
 pytest
 
 # Run with verbose output
@@ -642,11 +669,15 @@ ruff check --fix src tests
 - [x] Debug CLI (`corrector candidates "text"`)
 - [x] Strong typing: ABC interfaces, no `Protocol`, no `Any`, no `object`
 
-### Milestone 5 — N-Gram Phrase Scorer
-
-- [ ] Bigram/trigram counter
-- [ ] Phrase score lookup
-- [ ] Window-based candidate scoring
+### Milestone 5 — N-Gram Phrase Scorer ✅
+- [x] `scripts/build_ngram_store.py` — generates merged n-gram store
+- [x] Deterministic scoring with `PhraseScorer` (word validity, syllable freq, phrase n-gram, domain context, OCR confusion, edit distance, overcorrection penalty, negative phrase penalty)
+- [x] Bounded windowing around ambiguous tokens with overlap merging
+- [x] Combinatorial sequence generation with identity-path preservation and max-combination limits
+- [x] Per-token `CorrectionEvidence` with score deltas and `format_explanation()` output
+- [x] `format_scored_window()` diagnostics for debug CLI
+- [x] Acceptance tests (6 cases) using live phrase data
+- [x] 949+ tests across 24 files
 
 ### Milestone 6 — Decision Engine
 
