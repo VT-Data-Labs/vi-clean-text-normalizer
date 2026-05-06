@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 from pathlib import Path
 
 from scripts.build_trusted_lexicon import (
@@ -17,7 +16,6 @@ from scripts.build_trusted_lexicon import (
     load_uvd1,
     merge_words,
     write_jsonl,
-    write_sqlite,
 )
 from vn_corrector.stage1_normalize import (
     normalize_text as normalize,
@@ -448,32 +446,6 @@ class TestWriteJsonl:
         assert len(lines) == 2
 
 
-class TestWriteSqlite:
-    def test_creates_table(self, tmp_path: Path):
-        p = tmp_path / "test.db"
-        entries = [
-            MergedEntry(normalized="muỗng", surface="muỗng", no_tone="muong", sources={"uvd_1"}),
-        ]
-        write_sqlite(entries, p)
-        conn = sqlite3.connect(str(p))
-        cursor = conn.execute("SELECT COUNT(*) FROM lexicon_entries")
-        assert cursor.fetchone()[0] == 1
-        conn.close()
-
-    def test_indexes_created(self, tmp_path: Path):
-        p = tmp_path / "test.db"
-        entries = [
-            MergedEntry(normalized="muỗng", surface="muỗng", no_tone="muong", sources={"uvd_1"}),
-        ]
-        write_sqlite(entries, p)
-        conn = sqlite3.connect(str(p))
-        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='index'")
-        names = [row[0] for row in cursor.fetchall()]
-        assert "idx_surface" in names
-        assert "idx_no_tone" in names
-        conn.close()
-
-
 # ======================================================================
 # Integration test
 # ======================================================================
@@ -502,14 +474,12 @@ class TestBuildPipelineIntegration:
         _write_lines(aspell, ["4", "muỗng", "muông", "muống", "mương"])
 
         out_jsonl = tmp_path / "out.jsonl"
-        out_sqlite = tmp_path / "out.db"
 
         # Run pipeline via imports
         from scripts.build_trusted_lexicon import build_trusted_lexicon
 
         entries = build_trusted_lexicon(
             output=out_jsonl,
-            sqlite=out_sqlite,
             data_dir=tmp_path,
         )
 
@@ -525,16 +495,6 @@ class TestBuildPipelineIntegration:
         with open(out_jsonl) as f:
             lines = [json.loads(line) for line in f]
         assert len(lines) >= 4
-
-        # Check SQLite
-        conn = sqlite3.connect(str(out_sqlite))
-        cursor = conn.execute("SELECT surface, kind FROM lexicon_entries WHERE no_tone='muong'")
-        rows = cursor.fetchall()
-        assert len(rows) >= 3
-        # Verify kind values are lowercase
-        for _, kind in rows:
-            assert kind in ("word", "phrase", "name"), f"Unexpected kind: {kind}"
-        conn.close()
 
     def test_garbage_filtered_integration(self, tmp_path: Path):
         """Garbage entries should not appear in output."""

@@ -499,7 +499,10 @@ def _row_to_lexicon_entry(
     source = LexiconSource(source_str) if source_str else LexiconSource.BUILT_IN
     raw_tags = row["tags"] if "tags" in row else None  # noqa: SIM401
     tags: tuple[str, ...] = tuple(json.loads(raw_tags)) if raw_tags else ("word",)
-    entry_kind = LexiconKind(row["kind"]) if row.get("kind") else kind  # type: ignore[attr-defined]
+    if "kind" in row and row["kind"]:
+        entry_kind = LexiconKind(row["kind"])
+    else:
+        entry_kind = kind
     return LexiconEntry(
         entry_id=f"{prefix}/{surface}",
         surface=surface,

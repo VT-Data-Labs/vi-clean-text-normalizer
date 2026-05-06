@@ -4,8 +4,7 @@
 Usage
 -----
     python scripts/build_trusted_lexicon.py \\
-        --output data/lexicon/trusted_words.vi.jsonl \\
-        --sqlite data/lexicon/trusted_lexicon.db
+        --output data/lexicon/trusted_words.vi.jsonl
 
 Sources
 -------
@@ -33,7 +32,6 @@ import argparse
 import json
 import logging
 import re
-import sqlite3
 import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -346,49 +344,6 @@ def write_jsonl(entries: list[MergedEntry], path: Path) -> int:
     return count
 
 
-def write_sqlite(entries: list[MergedEntry], path: Path) -> int:
-    """Write entries into SQLite. Returns count."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(path))
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS lexicon_entries (
-            entry_id TEXT PRIMARY KEY,
-            surface TEXT,
-            normalized TEXT,
-            no_tone TEXT,
-            kind TEXT,
-            confidence REAL,
-            source TEXT
-        )
-    """)
-    conn.execute("DROP INDEX IF EXISTS idx_surface")
-    conn.execute("DROP INDEX IF EXISTS idx_no_tone")
-
-    cursor = conn.cursor()
-    count = 0
-    for e in entries:
-        entry_kind = e.kind
-        cursor.execute(
-            "INSERT OR REPLACE INTO lexicon_entries VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (
-                f"lex:{e.normalized}:{entry_kind.value}",
-                e.surface,
-                e.normalized,
-                e.no_tone,
-                entry_kind.value,
-                e.confidence,
-                "+".join(sorted(e.sources)),
-            ),
-        )
-        count += 1
-    conn.commit()
-    conn.execute("CREATE INDEX idx_surface ON lexicon_entries(normalized)")
-    conn.execute("CREATE INDEX idx_no_tone ON lexicon_entries(no_tone)")
-    conn.close()
-    return count
-
-
 # ---------------------------------------------------------------------------
 # Pipeline
 # ---------------------------------------------------------------------------
@@ -396,7 +351,6 @@ def write_sqlite(entries: list[MergedEntry], path: Path) -> int:
 
 def build_trusted_lexicon(
     output: Path,
-    sqlite: Path | None = None,
     data_dir: Path | None = None,
 ) -> list[MergedEntry]:
     """Run the full trusted lexicon build pipeline."""
@@ -464,13 +418,9 @@ def build_trusted_lexicon(
         surfaces = no_tone_index.get(key, [])
         log.info("  %s → %s", key, surfaces[:6])
 
-    # Write outputs
+    # Write output
     jsonl_count = write_jsonl(merged, output)
     log.info("Wrote %d entries to %s", jsonl_count, output)
-
-    if sqlite:
-        sql_count = write_sqlite(merged, sqlite)
-        log.info("Wrote %d entries to %s", sql_count, sqlite)
 
     log.info("Build complete — %d entries", len(merged))
     return merged
@@ -487,11 +437,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Output JSONL path",
     )
     parser.add_argument(
-        "--sqlite",
-        default=None,
-        help="Optional SQLite output path (e.g. data/lexicon/trusted_lexicon.db)",
-    )
-    parser.add_argument(
         "--data-dir",
         default="data/raw",
         help="Path to raw data directory",
@@ -505,7 +450,6 @@ def main() -> None:
     log.info("Starting trusted lexicon build")
     entries = build_trusted_lexicon(
         output=Path(args.output),
-        sqlite=Path(args.sqlite) if args.sqlite else None,
         data_dir=Path(args.data_dir),
     )
     if not entries:
