@@ -256,7 +256,7 @@ def _populate_trusted_jsonl(conn: sqlite3.Connection, jsonl_path: str | Path) ->
 
             confidence = float(score_dict.get("confidence", 1.0))
             frequency = float(score_dict.get("frequency", 0.0))
-            source_name = provenance_dict.get("source_name", "external-dictionary")
+            source = provenance_dict.get("source", "external-dictionary")
             tags_json = json.dumps(tags, ensure_ascii=False)
 
             if kind_str == "phrase":
@@ -280,7 +280,7 @@ def _populate_trusted_jsonl(conn: sqlite3.Connection, jsonl_path: str | Path) ->
                         no_tone,
                         kind_str,
                         kind_str,
-                        source_name,
+                        source,
                         confidence,
                         frequency,
                         domain,

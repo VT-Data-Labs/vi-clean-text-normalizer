@@ -489,20 +489,19 @@ def _row_to_lexicon_entry(
     surface: str,
     row: sqlite3.Row,
 ) -> LexiconEntry:
-    kind = _infer_kind(str(row["type"])) if "type" in row else LexiconKind.WORD
-    freq = float(row["freq"]) if "freq" in row else 1.0
-    domain: str | None = row["domain"] if "domain" in row else None  # noqa: SIM401
-    no_tone: str = row["no_tone"] if "no_tone" in row else strip_accents(surface)
-    normalized: str = row["normalized"] if "normalized" in row else surface  # noqa: SIM401
-    confidence = float(row["confidence"]) if "confidence" in row else freq
-    source_str: str | None = row["source"] if "source" in row else None  # noqa: SIM401
-    source = LexiconSource(source_str) if source_str else LexiconSource.BUILT_IN
-    raw_tags = row["tags"] if "tags" in row else None  # noqa: SIM401
+    r = dict(row)
+    kind = _infer_kind(str(r["type"])) if "type" in r else LexiconKind.WORD
+    freq = float(r.get("freq", 1.0))
+    domain: str | None = r.get("domain")
+    no_tone: str = r.get("no_tone") or strip_accents(surface)
+    normalized: str = r.get("normalized", surface)
+    confidence = float(r.get("confidence", freq))
+    source_str: str | None = r.get("source")
+    source = LexiconSource(source_str) if source_str and source_str in LexiconSource._value2member_map_ else LexiconSource.BUILT_IN
+    raw_tags = r.get("tags")
     tags: tuple[str, ...] = tuple(json.loads(raw_tags)) if raw_tags else ("word",)
-    if "kind" in row and row["kind"]:
-        entry_kind = LexiconKind(row["kind"])
-    else:
-        entry_kind = kind
+    raw_kind = r.get("kind")
+    entry_kind = LexiconKind(raw_kind) if raw_kind else kind
     return LexiconEntry(
         entry_id=f"{prefix}/{surface}",
         surface=surface,
