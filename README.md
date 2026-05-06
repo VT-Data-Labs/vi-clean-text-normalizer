@@ -48,7 +48,7 @@ Primary use cases:
 - [x] Shared types, constants, validation, and error enums
 - [x] CLI entrypoint (correction + lexicon subcommands)
 - [x] CI pipeline (pytest + ruff + mypy + pre-commit)
-- [x] 582 tests across 14 test files
+- [x] 734+ tests across 14 test files
 
 ### In Progress
 
@@ -73,9 +73,10 @@ Primary use cases:
 - **Tokenization** — fine-grained token splitting with strict roundtrip guarantee: `reconstruct(tokenize(text)) == text`
 - **Protected token detection** — regex and lexicon matchers for URLs, emails, phone numbers, numbers, units, money, percentages, codes, dates, chemical terms; conflict resolution with priority-based ranking
 - **Vietnamese detection** — correct identification of Vietnamese characters with tone marks across Unicode blocks
-- **Lexicon store** — pluggable backend architecture (ABC + JSON + SQLite), accent-insensitive lookups, syllable candidates, phrase matching, OCR confusion resolution
-- **Lexicon build pipeline** — builders for syllables, words, phrases, OCR confusions, and abbreviations with validation and metadata tracking
-- **SQLite backend** — query-based lexicon store using stdlib `sqlite3`, no extra dependencies, auto-populate from built-in resources
+- **Lexicon store** — pluggable backend architecture (ABC + JSON + SQLite + Hybrid), accent-insensitive lookups, syllable candidates, phrase matching, OCR confusion resolution
+- **Three explicit backends** — `JsonLexiconStore` (JSON resources only), `SqliteLexiconStore` (SQLite DB only), `HybridLexiconStore` (primary/fallback composition)
+- **Lexicon build pipeline** — `build_trusted_lexicon.py` generates trusted-word JSONL; `build_lexicon_db.py` compiles JSON resources + trusted JSONL into a single SQLite runtime DB
+- **SQLite backend** — query-based store using stdlib `sqlite3`, loads pre-built DB via `SqliteLexiconStore.from_db()`
 - **CLI interface** — single-text, batch file, interactive, JSON output modes, plus dedicated `lexicon` subcommands (info, lookup, candidates, validate)
 
 ---
@@ -151,8 +152,14 @@ Confidence: 100.00%
 The `corrector lexicon` subcommand group provides inspection tools:
 
 ```bash
-# Show lexicon statistics
+# Show lexicon statistics (JSON backend)
 uv run corrector lexicon info
+
+# SQLite backend
+uv run corrector --lexicon-mode sqlite --lexicon-db data/lexicon/trusted_lexicon.db lexicon info
+
+# Hybrid backend (SQLite primary, JSON fallback)
+uv run corrector --lexicon-mode hybrid --lexicon-db data/lexicon/trusted_lexicon.db lexicon info
 
 # Look up a word across all indexes
 uv run corrector lexicon lookup "muỗng"
@@ -186,6 +193,13 @@ uv run corrector --interactive
 | `--json` | Output raw JSON |
 | `--interactive`, `-i` | Interactive line-by-line mode |
 | `--pipeline` | Pipeline stage: `stage0` (default) or `full` (future) |
+
+Lexicon subcommands also support:
+
+| Flag | Description |
+|------|-------------|
+| `--lexicon-mode` | Backend: `json` (default), `sqlite`, or `hybrid` |
+| `--lexicon-db` | Path to SQLite DB (for sqlite/hybrid modes) |
 
 ---
 
@@ -233,11 +247,37 @@ doc = protect("Mua 2 hộp sữa, giá 450.000đ, giao tại 12 Nguyễn Huệ")
 ### Lexicon store
 
 ```python
-from vn_corrector.stage2_lexicon import JsonLexiconStore, LexiconStore
+from vn_corrector.stage2_lexicon import load_default_lexicon, HybridLexiconStore
 
-# Default backend — loads all built-in JSON resources
-store = LexiconStore.load_default()  # returns JsonLexiconStore
+# JSON resources only (small human-curated seed data)
+store = load_default_lexicon("json")  # returns JsonLexiconStore
 
+# SQLite production backend (requires pre-built DB)
+store = load_default_lexicon("sqlite", db_path="data/lexicon/trusted_lexicon.db")
+
+# Hybrid: SQLite primary, JSON fallback
+store = load_default_lexicon("hybrid", db_path="data/lexicon/trusted_lexicon.db")
+```
+
+Or construct backends directly:
+
+```python
+from vn_corrector.stage2_lexicon import JsonLexiconStore
+from vn_corrector.stage2_lexicon.backends import SqliteLexiconStore, HybridLexiconStore
+
+# JSON — built-in resources only
+json_store = JsonLexiconStore.from_resources()
+
+# SQLite — existing DB
+sqlite_store = SqliteLexiconStore.from_db("data/lexicon/trusted_lexicon.db")
+
+# Hybrid — explicit composition
+hybrid = HybridLexiconStore(primary=sqlite_store, fallback=json_store)
+```
+
+All stores share the same API:
+
+```python
 # Syllable candidates (accent-insensitive)
 store.get_syllable_candidates("muong")
 # → [LexiconEntry(surface="muỗng", ...), LexiconEntry(surface="mường", ...), ...]
@@ -254,19 +294,31 @@ store.get_ocr_corrections("mùông")  # OcrConfusionLookupResult with Candidate 
 store.lookup_phrase_str("so muong gat ngang")  # "số muỗng gạt ngang"
 ```
 
-#### SQLite backend
+#### Building the SQLite database
 
-```python
-from vn_corrector.stage2_lexicon.backends.sqlite_store import SqliteLexiconStore
+```bash
+# Step 1: Generate trusted-word JSONL from external dictionaries
+python scripts/build_trusted_lexicon.py --output data/lexicon/trusted_words.jsonl
 
-# Build from built-in resources
-store = SqliteLexiconStore.from_builtin_resources("lexicon.db", overwrite=True)
+# Step 2: Compile JSON resources + trusted JSONL into the official DB
+python scripts/build_lexicon_db.py \
+    --resources resources/lexicons \
+    --trusted-jsonl data/lexicon/trusted_words.jsonl \
+    --output data/lexicon/trusted_lexicon.db
+```
 
-# Or open an existing database
-store = SqliteLexiconStore.from_path("lexicon.db")
+The output DB uses the official `SqliteLexiconStore` schema and can be loaded at runtime with `SqliteLexiconStore.from_db()` or `load_default_lexicon("sqlite")`.
 
-# Same API as JsonLexiconStore
-store.contains_syllable("muỗng")  # True
+#### Build pipeline
+
+```text
+resources/lexicons/*.json   (human-curated seed data)
+         │
+         ├──→ build_lexicon_db.py ──→ trusted_lexicon.db ──→ SqliteLexiconStore.from_db()
+         │
+trusted_words.jsonl         (generated by build_trusted_lexicon.py)
+         ↑
+external dictionaries / corpus
 ```
 
 ---
@@ -331,7 +383,7 @@ src/vn_corrector/
 │       └── whitespace.py    # Whitespace normalization
 ├── stage2_lexicon/          # Lexicon store + build pipeline
 │   ├── core/                # ABC, normalize_key, types (LexiconIndex, build types)
-│   ├── backends/            # JsonLexiconStore, SqliteLexiconStore (refactored)
+│   ├── backends/            # JsonLexiconStore + SqliteLexiconStore + HybridLexiconStore
 │   ├── builders/            # Syllable, word, phrase, confusion, abbreviation builders
 │   └── pipeline/            # BuildPipeline orchestration + build_all()
 └── stage3_protect/          # Stage 3 — Protected token detection
@@ -356,11 +408,14 @@ resources/
 │   ├── foreign_words.json   # Domain terms (chemical, brand, etc.)
 │   ├── ocr_confusions.vi.json  # Known OCR error patterns
 │   └── chemicals.txt        # Chemical term lexicon
-└── matchers/                # YAML matcher configurations
-    ├── url.yaml, email.yaml, phone.yaml
-    ├── number.yaml, unit.yaml, money.yaml, percent.yaml
-    ├── code.yaml, date.yaml
-    └── chemical.yaml
+├── matchers/                # YAML matcher configurations
+│   ├── url.yaml, email.yaml, phone.yaml
+│   ├── number.yaml, unit.yaml, money.yaml, percent.yaml
+│   ├── code.yaml, date.yaml
+│   └── chemical.yaml
+
+data/lexicon/                # Compiled runtime artifacts (generated)
+    └── trusted_lexicon.db   # Official SQLite DB (from build_lexicon_db.py)
 ```
 
 ---
@@ -374,10 +429,12 @@ resources/
 
 ### ✅ M2 — Lexicon Store (complete)
 - Backend-agnostic `LexiconStore` ABC with typed interface
-- `JsonLexiconStore` — in-memory store loaded from built-in JSON resources
-- `SqliteLexiconStore` — query-based store backed by stdlib `sqlite3`
+- `JsonLexiconStore` — in-memory store loaded from built-in JSON resources only
+- `SqliteLexiconStore` — query-based store backed by stdlib `sqlite3`, loads pre-built DB
+- `HybridLexiconStore` — explicit primary/fallback composition
+- `load_default_lexicon(mode)` factory with `"json"`, `"sqlite"`, `"hybrid"` modes
 - Lexicon build pipeline (syllable, word, phrase, confusion, abbreviation builders)
-- CLI lexicon subcommands (info, lookup, candidates, validate)
+- CLI lexicon subcommands (info, lookup, candidates, validate) with `--lexicon-mode` flag
 
 ### ✅ M3 — Protected Token Detection (complete)
 - Regex-based matchers (URL, email, phone, number, unit, money, percent, code, date)
@@ -423,7 +480,7 @@ patterns:
 ## Testing
 
 ```bash
-# Run all tests (582 tests across 14 files)
+# Run all tests (734+ tests across 14 files)
 pytest
 
 # Run with verbose output
@@ -474,11 +531,14 @@ ruff check --fix src tests
 ### Milestone 2 — Lexicon Store ✅
 
 - [x] Backend-agnostic LexiconStore ABC with typed interface
-- [x] JsonLexiconStore — in-memory store loaded from built-in JSON resources
-- [x] SqliteLexiconStore — query-based store backed by stdlib sqlite3
+- [x] JsonLexiconStore — in-memory store loaded from built-in JSON resources only
+- [x] SqliteLexiconStore — query-based store backed by stdlib sqlite3, loads pre-built DB
+- [x] HybridLexiconStore — explicit primary/fallback composition
+- [x] `load_default_lexicon(mode)` factory with json/sqlite/hybrid modes
 - [x] Syllable, word, unit, phrase, abbreviation, OCR confusion, and foreign-word indices
 - [x] Lexicon build pipeline with validation and metadata
-- [x] CLI lexicon subcommands (info, lookup, candidates, validate)
+- [x] build_trusted_lexicon.py (generates JSONL) + build_lexicon_db.py (compiles SQLite DB)
+- [x] CLI lexicon subcommands (info, lookup, candidates, validate) with --lexicon-mode flag
 
 ### Milestone 3 — Protected Tokens ✅
 
