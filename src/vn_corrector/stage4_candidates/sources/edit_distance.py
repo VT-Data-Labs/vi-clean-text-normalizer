@@ -83,7 +83,7 @@ class EditDistanceSource(CandidateSourceGenerator):
                 continue
             try:
                 dist = _levenshtein(to_no_tone_key(entry.surface), no_tone)
-            except Exception:
+            except (TypeError, ValueError):
                 continue
             if dist > max_dist or dist == 0:
                 continue

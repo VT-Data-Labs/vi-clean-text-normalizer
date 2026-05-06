@@ -196,7 +196,7 @@ def test_candidate_count_respects_max_limit(
 def test_max_candidates_configurable(
     mock_lexicon: MagicMock,
 ) -> None:
-    "max_candidates_per_token=3 limits output to 3 candidates."
+    """max_candidates_per_token=3 limits output to 3 candidates."""
     config = CandidateGeneratorConfig(max_candidates_per_token=3, cache_enabled=False)
     gen = CandidateGenerator(mock_lexicon, config=config)
     candidates = gen.generate_token("dan")

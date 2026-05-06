@@ -53,10 +53,21 @@ select = [
     "B",    # flake8-bugbear
     "SIM",  # flake8-simplify
     "ARG",  # flake8-unused-arguments
+    "S",    # flake8-bandit (security)
     "RUF",  # ruff-specific rules
+    "D103", # missing docstring in public function
+    "D200", # one-line docstring fits on one line
+    "D202", # no blank lines after docblock
+    "D204", # docstring not on same line as code
+    "D209", # closing quotes on separate line
+    "D210", # no whitespace around quotes
+    "D300", # triple quotes
+    "D400", # first line ends with period
+    "D403", # first word capitalized
+    "D415", # first sentence ends with period
 ]
 ignore = [
-    "D",    # pydocstyle (matches current missing-docstring disable)
+    "S105", # hardcoded password detection (too noisy for this project)
 ]
 
 [tool.ruff.format]
@@ -66,6 +77,9 @@ quote-style = "double"
 "tests/*.py" = [
     "ARG001",  # unused function argument (common in pytest fixtures)
     "RUF001",  # ambiguous char detection (intentional: testing non-standard spaces)
+    "S101",    # assert in tests is acceptable
+    "S108",    # temp file in tests is intentional
+    "D103",    # public function docstring (test functions are self-documenting)
 ]
 
 [tool.mypy]

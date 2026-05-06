@@ -181,6 +181,7 @@ def _run_candidates(args: argparse.Namespace) -> None:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments, dispatching to subcommand parsers as needed."""
     raw = argv if argv is not None else sys.argv[1:]
     is_candidates = bool(raw) and raw[0] == "candidates"
     is_lexicon = bool(raw) and raw[0] == "lexicon"
@@ -239,6 +240,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def correct_text(text: str, _domain: str | None = None) -> CorrectionResult:
+    """Apply the correction pipeline to input text."""
     normalized = text.strip()
     return CorrectionResult(
         original_text=text,
@@ -248,6 +250,7 @@ def correct_text(text: str, _domain: str | None = None) -> CorrectionResult:
 
 
 def format_output(result: CorrectionResult) -> str:
+    """Format a correction result as a human-readable string."""
     lines = [
         f"Original:  {result.original_text}",
         f"Corrected: {result.corrected_text}",
@@ -265,6 +268,7 @@ def format_output(result: CorrectionResult) -> str:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """CLI entry point: parse args and dispatch to the appropriate handler."""
     args = parse_args(argv)
 
     if getattr(args, "command", None) == "lexicon":

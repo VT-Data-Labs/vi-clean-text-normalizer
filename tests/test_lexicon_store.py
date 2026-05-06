@@ -207,7 +207,7 @@ class _StoreTestBase:
         assert len(result.entries) == 0
 
     def test_ambiguous_dt(self):
-        """dt should expand to both diện tích and đường trước."""
+        """Dt should expand to both diện tích and đường trước."""
         result = self.store.lookup_abbreviation("dt")
         assert result.found
         entry = result.entries[0]

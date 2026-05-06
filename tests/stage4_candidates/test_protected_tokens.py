@@ -86,7 +86,8 @@ class TestProtectedTokens:
     def test_non_protected_token_produces_variants(self, gen: CandidateGenerator) -> None:
         """A non-protected token should produce more than one candidate.
         This test uses an empty lexicon, so the only 'variant' is the original itself.
-        With empty lexicon, ORIGINAL is the only source, so count may be 1."""
+        With empty lexicon, ORIGINAL is the only source, so count may be 1.
+        """
         candidates = gen.generate_token("mùông", protected=False)
         # At minimum the original is included
         assert len(candidates) >= 1

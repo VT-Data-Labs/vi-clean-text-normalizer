@@ -13,6 +13,7 @@ def compute_prior_score(
     candidate: Candidate,
     source_prior_weights: dict[str, float],
 ) -> float:
+    """Compute a lightweight prior score for ordering candidates within a token."""
     score = 0.0
 
     # Best source weight
@@ -45,6 +46,7 @@ def rank_candidates(
     source_prior_weights: dict[str, float],
     keep_original_first: bool = False,
 ) -> list[Candidate]:
+    """Rank candidates by prior score, optionally keeping the original first."""
     scored = [(compute_prior_score(c, source_prior_weights), c) for c in candidates]
     scored.sort(key=_sort_key, reverse=True)
     result = [c for _, c in scored]

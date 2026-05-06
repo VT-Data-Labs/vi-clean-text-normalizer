@@ -66,7 +66,7 @@ class TestValidateSyllableEntry:
         assert any("Duplicate" in e for e in result.errors)
 
     def test_form_strips_to_wrong_base(self):
-        """kiem with form kiện should fail — kiện strips to kien, not kiem."""
+        """Kiem with form kiện should fail — kiện strips to kien, not kiem."""
         entry = {
             "base": "kiem",
             "forms": ["kiểm", "kiện"],
@@ -77,7 +77,7 @@ class TestValidateSyllableEntry:
         assert any("strips to" in e for e in result.errors)
 
     def test_form_strips_to_wrong_base_nhieu(self):
-        """nhiet with form nhiều should fail — nhiều strips to nhieu, not nhiet."""
+        """Nhiet with form nhiều should fail — nhiều strips to nhieu, not nhiet."""
         entry = {
             "base": "nhiet",
             "forms": ["nhiệt", "nhiều"],

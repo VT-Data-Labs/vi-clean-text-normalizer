@@ -20,11 +20,11 @@ class TestNormalizeKey:
         assert normalize_key("dương") == "duong"
 
     def test_invariant_muong(self):
-        """normalize_key("Muỗng") == normalize_key("muong")"""
+        """Invariant: ``normalize_key("Muỗng") == normalize_key("muong")``."""
         assert normalize_key("Muỗng") == normalize_key("muong")
 
     def test_invariant_duong(self):
-        """normalize_key("Đường") == normalize_key("duong")"""
+        """Invariant: ``normalize_key("Đường") == normalize_key("duong")``."""
         assert normalize_key("Đường") == normalize_key("duong")
 
     def test_whitespace_normalized(self):

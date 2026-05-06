@@ -34,7 +34,8 @@ def gen(real_lexicon):
 
 class TestBasicCorrection:
     """Prove that common Vietnamese OCR errors produce the expected
-    correction candidates via the real bundled lexicon."""
+    correction candidates via the real bundled lexicon.
+    """
 
     def test_muong_contains_muong(self, gen: CandidateGenerator) -> None:
         """OCR error ``mùông`` should yield ``muỗng``."""

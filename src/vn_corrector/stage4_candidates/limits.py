@@ -16,6 +16,7 @@ from vn_corrector.stage4_candidates.types import Candidate, TokenCandidates
 def estimate_combination_count(
     token_candidates: Sequence[TokenCandidates],
 ) -> int:
+    """Compute the Cartesian product of candidate counts across all tokens."""
     if not token_candidates:
         return 0
     product = 1
@@ -33,6 +34,7 @@ def trim_candidate_list(
     source_prior_weights: dict[str, float],
     keep_original: bool = True,
 ) -> list[Candidate]:
+    """Trim a candidate list to ``max_candidates``, preserving the original if requested."""
     if len(candidates) <= max_candidates:
         return list(candidates)
 
@@ -57,6 +59,7 @@ def trim_window_token_candidates(
     max_combinations: int,
     config: CandidateGeneratorConfig,
 ) -> list[TokenCandidates]:
+    """Enforce per-token and per-window combination limits on token candidates."""
     source_prior_weights = config.source_prior_weights
     keep_original = config.keep_original_first
     max_per_token = config.max_candidates_per_token
