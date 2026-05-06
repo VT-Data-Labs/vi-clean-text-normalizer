@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from vn_corrector.common.types import LexiconStoreInterface
 from vn_corrector.stage1_normalize import normalize_key
 from vn_corrector.stage4_candidates.sources.base import CandidateSourceGenerator
 from vn_corrector.stage4_candidates.types import (
@@ -16,7 +17,6 @@ from vn_corrector.stage4_candidates.types import (
     CandidateProposal,
     CandidateRequest,
     CandidateSource,
-    LexiconStoreProtocol,
 )
 
 
@@ -107,7 +107,7 @@ def _collect_candidate_texts_for_index(
     return texts
 
 
-def _phrase_exists(lexicon: LexiconStoreProtocol, normalized_key: str, raw_phrase: str) -> bool:
+def _phrase_exists(lexicon: LexiconStoreInterface, normalized_key: str, raw_phrase: str) -> bool:
     """Check if *raw_phrase* is a known phrase in the lexicon."""
     try:
         result = lexicon.lookup_phrase_str(raw_phrase)
@@ -124,8 +124,8 @@ def _phrase_exists(lexicon: LexiconStoreProtocol, normalized_key: str, raw_phras
         pass
 
     try:
-        result = lexicon.lookup_phrase_normalized(normalized_key)
-        if result and len(result) > 0:
+        phrase_entries = lexicon.lookup_phrase_normalized(normalized_key)
+        if phrase_entries and len(phrase_entries) > 0:
             return True
     except (AttributeError, TypeError):
         pass

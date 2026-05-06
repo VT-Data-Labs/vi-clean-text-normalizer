@@ -1,16 +1,17 @@
-"""CLI for testing Vietnamese OCR corrections.
+"""CLI for testing Vietnamese OCR corrections and candidate generation.
 
 Usage:
   uv run corrector "SỐ MÙÔNG (GẠT NGANG)"
   uv run corrector --domain milk_instruction --json < input.txt
-  uv run corrector --interactive
+  uv run corrector candidates "người đẫn đường"
+  uv run corrector lexicon lookup muỗng
 """
 
 import argparse
 import json
 import sys
 from dataclasses import asdict
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from vn_corrector.common.types import CorrectionResult
 from vn_corrector.stage2_lexicon import LexiconStore, load_default_lexicon
@@ -33,27 +34,19 @@ def _build_lexicon_parser(subparsers: Any) -> argparse.ArgumentParser:
     )
     lex_sub = lex_parser.add_subparsers(dest="lex_subcommand", required=True)
 
-    # lexicon info
     lex_sub.add_parser("info", help="Show lexicon statistics")
-
-    # lexicon lookup
     lookup_parser = lex_sub.add_parser("lookup", help="Look up a word in the lexicon")
     lookup_parser.add_argument("word", help="Word to look up")
-
-    # lexicon candidates
     cand_parser = lex_sub.add_parser(
         "candidates", help="Show syllable candidates for a no-tone key"
     )
     cand_parser.add_argument("no_tone_key", help="No-tone lookup key (e.g. muong)")
-
-    # lexicon validate
     lex_sub.add_parser("validate", help="Validate all built-in lexicon resource files")
 
     return cast(argparse.ArgumentParser, lex_parser)
 
 
 def _lexicon_info(store: LexiconStore) -> None:
-    """Print lexicon statistics."""
     print("Lexicon Statistics")
     print("=" * 40)
     print(f"Syllables:          {store.get_syllable_entry_count()}")
@@ -65,7 +58,6 @@ def _lexicon_info(store: LexiconStore) -> None:
 
 
 def _lexicon_lookup(store: LexiconStore, word: str) -> None:
-    """Look up a word and print surface + accentless matches."""
     surface = store.lookup(word)
     accentless = store.lookup_accentless(word)
 
@@ -91,7 +83,6 @@ def _lexicon_lookup(store: LexiconStore, word: str) -> None:
 
 
 def _lexicon_candidates(store: LexiconStore, key: str) -> None:
-    """Print syllable candidates for a no-tone key."""
     candidates = store.get_syllable_candidates(key)
     if candidates:
         print(f"Candidates for no-tone key: {key!r}")
@@ -103,7 +94,6 @@ def _lexicon_candidates(store: LexiconStore, key: str) -> None:
 
 
 def _lexicon_validate() -> None:
-    """Validate all built-in lexicon resource files."""
     from vn_corrector.common.validation import validate_lexicon_file
 
     resources: list[tuple[str, str]] = [
@@ -132,7 +122,6 @@ def _lexicon_validate() -> None:
 
 
 def _run_lexicon(args: argparse.Namespace) -> None:
-    """Dispatch lexicon subcommands."""
     from pathlib import Path
 
     mode: str = getattr(args, "lexicon_mode", "json")
@@ -149,14 +138,67 @@ def _run_lexicon(args: argparse.Namespace) -> None:
         _lexicon_validate()
 
 
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Parse command-line arguments, detecting subcommands automatically.
+def _show_token_candidates(gen: Any, tokens: list[Any]) -> None:
+    """Print a human-readable candidate debug table."""
+    for i, _token in enumerate(tokens):
+        tc = gen.generate_for_token_index(tokens, i)
+        print(f"Token[{tc.token_index}] {tc.token_text}")
+        if tc.diagnostics:
+            for d in tc.diagnostics:
+                print(f"  # {d}")
+        if not tc.candidates:
+            print("  (no candidates)")
+            continue
+        for c in tc.candidates:
+            sources_str = ", ".join(str(s) for s in sorted(c.sources))
+            prior = c.prior_score
+            is_orig = "(original)" if c.is_original else ""
+            padding = " " * max(0, 16 - len(c.text))
+            print(f"  - {c.text}{padding} prior={prior:.3f}  [{sources_str}] {is_orig}")
+            for ev in c.evidence:
+                print(f"      evidence: [{ev.source}] {ev.detail}")
+        print()
 
-    Detects if the first argument matches a known subcommand (e.g. ``lexicon``)
-    and builds the appropriate parser with or without subparsers.
-    """
+
+def _run_candidates(args: argparse.Namespace) -> None:
+    """Print a debug view of candidates for the given text."""
+    from vn_corrector.stage4_candidates import CandidateGenerator
+    from vn_corrector.tokenizer import tokenize
+
+    text = " ".join(args.text)
+    mode: Literal["json", "sqlite", "hybrid"] = cast(
+        Literal["json", "sqlite", "hybrid"],
+        getattr(args, "lexicon_mode", "json"),
+    )
+    lexicon = load_default_lexicon(mode)
+    gen = CandidateGenerator(lexicon)
+
+    tokens = tokenize(text)
+    print(f"Input text: {text!r}")
+    print(f"Tokens: {len(tokens)}")
+    print()
+    _show_token_candidates(gen, tokens)
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     raw = argv if argv is not None else sys.argv[1:]
+    is_candidates = bool(raw) and raw[0] == "candidates"
     is_lexicon = bool(raw) and raw[0] == "lexicon"
+
+    if is_candidates:
+        parser = argparse.ArgumentParser(
+            description="Show candidate debug view for text",
+        )
+        parser.add_argument("text", nargs="+", help="Text to generate candidates for")
+        parser.add_argument(
+            "--lexicon-mode",
+            choices=["json", "sqlite", "hybrid"],
+            default="json",
+            help="Lexicon backend mode (default: json)",
+        )
+        ns = parser.parse_args(raw)
+        ns.command = "candidates"
+        return ns
 
     if is_lexicon:
         parser = argparse.ArgumentParser(
@@ -164,8 +206,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         )
         subparsers = parser.add_subparsers(dest="command", required=True)
         _build_lexicon_parser(subparsers)
-        # Disable the default help so it doesn't interfere with subparsers.
-        # We only add --help to the subparsers where needed via the parent.
         return parser.parse_args(raw)
 
     parser = argparse.ArgumentParser(
@@ -199,11 +239,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def correct_text(text: str, _domain: str | None = None) -> CorrectionResult:
-    """Run correction on input text.
-
-    Currently runs Stage 0 (input normalization) only.
-    Will wire through the full pipeline once milestones M1-M6 are built.
-    """
     normalized = text.strip()
     return CorrectionResult(
         original_text=text,
@@ -213,7 +248,6 @@ def correct_text(text: str, _domain: str | None = None) -> CorrectionResult:
 
 
 def format_output(result: CorrectionResult) -> str:
-    """Human-readable formatted output."""
     lines = [
         f"Original:  {result.original_text}",
         f"Corrected: {result.corrected_text}",
@@ -222,25 +256,23 @@ def format_output(result: CorrectionResult) -> str:
     if result.changes:
         lines.append("Changes:")
         for c in result.changes:
-            lines.append(f"  [{c.span.start}:{c.span.end}] {c.original!r} → {c.replacement!r}")
+            lines.append(f"  [{c.span.start}:{c.span.end}] {c.original!r} -> {c.replacement!r}")
     if result.flags:
         lines.append("Flags:")
         for f in result.flags:
-            lines.append(f"  {f.flag_type}: {f.span_text!r} — {f.reason}")
+            lines.append(f"  {f.flag_type}: {f.span_text!r} - {f.reason}")
     return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> None:
-    """CLI entrypoint — parses args and dispatches to lexicon or correction.
-
-    Args:
-        argv: Override for ``sys.argv[1:]`` (used in tests).
-
-    """
     args = parse_args(argv)
 
     if getattr(args, "command", None) == "lexicon":
         _run_lexicon(args)
+        return
+
+    if getattr(args, "command", None) == "candidates":
+        _run_candidates(args)
         return
 
     if getattr(args, "interactive", False):

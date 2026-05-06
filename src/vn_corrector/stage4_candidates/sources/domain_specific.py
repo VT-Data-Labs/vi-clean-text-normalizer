@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from vn_corrector.common.types import LexiconEntry
 from vn_corrector.stage1_normalize import to_no_tone_key
 from vn_corrector.stage4_candidates.sources.base import CandidateSourceGenerator
 from vn_corrector.stage4_candidates.types import (
@@ -48,7 +49,8 @@ class DomainSpecificSource(CandidateSourceGenerator):
         except (AttributeError, TypeError):
             return
 
-        for entry in entries:
+        surface_entries = [e for e in entries if isinstance(e, (LexiconEntry,))]
+        for entry in surface_entries:
             domain = getattr(entry, "domain", None) or getattr(entry, "tags", ())
             if not domain:
                 continue

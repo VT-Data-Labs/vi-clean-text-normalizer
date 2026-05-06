@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from vn_corrector.common.types import AbbreviationEntry, LexiconEntry
+from vn_corrector.common.types import AbbreviationEntry, LexiconEntry, LexiconStoreInterface
 from vn_corrector.stage1_normalize import to_no_tone_key
 from vn_corrector.stage4_candidates.sources.base import CandidateSourceGenerator
 from vn_corrector.stage4_candidates.types import (
@@ -13,7 +13,6 @@ from vn_corrector.stage4_candidates.types import (
     CandidateProposal,
     CandidateRequest,
     CandidateSource,
-    LexiconStoreProtocol,
 )
 
 
@@ -58,7 +57,7 @@ class SyllableMapSource(CandidateSourceGenerator):
 
 
 def _get_syllable_forms(
-    lexicon: LexiconStoreProtocol, no_tone: str
+    lexicon: LexiconStoreInterface, no_tone: str
 ) -> list[LexiconEntry | AbbreviationEntry]:
     """Get syllable entries from the lexicon matching *no_tone*."""
     try:
@@ -68,8 +67,9 @@ def _get_syllable_forms(
 
     try:
         result = lexicon.lookup_accentless(no_tone)
-        entries = list(result.entries) if result is not None else []
-        return entries
+        if result is not None:
+            return [e for e in result.entries if isinstance(e, (LexiconEntry, AbbreviationEntry))]
+        return []
     except (AttributeError, TypeError):
         return []
 

@@ -38,7 +38,7 @@ class OcrConfusionSource(CandidateSourceGenerator):
         # Try lexicon OCR lookup
         try:
             corrections = lexicon.get_ocr_corrections(request.token_text)
-            candidate_texts: list[str] = list(corrections.corrections)
+            candidate_texts = [c.text for c in corrections.corrections]
         except (AttributeError, TypeError):
             # Fallback to lookup_ocr
             try:

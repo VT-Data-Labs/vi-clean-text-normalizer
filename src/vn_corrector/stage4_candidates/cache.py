@@ -8,10 +8,8 @@ from __future__ import annotations
 
 from typing import cast
 
-from vn_corrector.stage4_candidates.types import (
-    Candidate,
-    CandidateGeneratorConfigProtocol,
-)
+from vn_corrector.stage4_candidates.config import CandidateGeneratorConfig
+from vn_corrector.stage4_candidates.types import Candidate
 
 # Sentinel for cache misses
 _SENTINEL = object()
@@ -29,7 +27,7 @@ class TokenCache:
         self._hits: int = 0
         self._misses: int = 0
 
-    def _fingerprint(self, config: CandidateGeneratorConfigProtocol) -> int:
+    def _fingerprint(self, config: CandidateGeneratorConfig) -> int:
         """Generate a simple fingerprint from config toggles."""
         try:
             flags = (
@@ -55,7 +53,7 @@ class TokenCache:
         token_text: str,
         token_type_str: str,
         protected: bool,
-        config: CandidateGeneratorConfigProtocol,
+        config: CandidateGeneratorConfig,
     ) -> list[Candidate] | None:
         """Look up cached result, returning ``None`` on miss."""
         key = (token_text, token_type_str, protected, self._fingerprint(config))
@@ -71,7 +69,7 @@ class TokenCache:
         token_text: str,
         token_type_str: str,
         protected: bool,
-        config: CandidateGeneratorConfigProtocol,
+        config: CandidateGeneratorConfig,
         candidates: list[Candidate],
     ) -> None:
         """Store a result in the cache."""
