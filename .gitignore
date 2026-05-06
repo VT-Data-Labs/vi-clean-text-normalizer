@@ -15,10 +15,5 @@ build/
 .mypy_cache/
 .ruff_cache/
 
-# Build artifacts — raw downloaded data (re-generate via scripts/download_lexicon_sources.py)
-data/raw/
-
-# Build artifacts — generated lexicons (re-generate via scripts/build_trusted_lexicon.py)
-data/lexicon/
 resources/lexicon/trusted_words.vi.jsonl
 resources/lexicons/lexicon_package.json
