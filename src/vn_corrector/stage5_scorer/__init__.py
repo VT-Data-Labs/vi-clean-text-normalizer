@@ -8,6 +8,9 @@ OCR confusion support, and overcorrection prevention.
 """
 
 from vn_corrector.stage5_scorer.config import PhraseScorerConfig
+from vn_corrector.stage5_scorer.diagnostics import format_scored_window
+from vn_corrector.stage5_scorer.explain import format_explanation
+from vn_corrector.stage5_scorer.scorer import PhraseScorer
 from vn_corrector.stage5_scorer.types import (
     CandidateSequence,
     CandidateWindow,
@@ -25,10 +28,13 @@ __all__ = [
     "CandidateWindow",
     "CorrectionEvidence",
     "MetadataValue",
+    "PhraseScorer",
     "PhraseScorerConfig",
     "ScoreBreakdown",
     "ScoredSequence",
     "ScoredWindow",
     "ScoringWeights",
     "TokenCorrectionExplanation",
+    "format_explanation",
+    "format_scored_window",
 ]
