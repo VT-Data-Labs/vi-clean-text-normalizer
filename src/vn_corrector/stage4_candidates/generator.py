@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from vn_corrector.common.types import Token, TokenType
+from vn_corrector.common.types import LexiconStoreInterface, Token, TokenType
 from vn_corrector.stage1_normalize import normalize_text, to_no_tone_key
 from vn_corrector.stage4_candidates.cache import TokenCache
 from vn_corrector.stage4_candidates.config import CandidateGeneratorConfig
@@ -33,7 +33,6 @@ from vn_corrector.stage4_candidates.types import (
     CandidateProposal,
     CandidateRequest,
     CandidateSource,
-    LexiconStoreProtocol,
     TokenCandidates,
 )
 
@@ -52,7 +51,7 @@ class CandidateGenerator:
 
     def __init__(
         self,
-        lexicon: LexiconStoreProtocol,
+        lexicon: LexiconStoreInterface,
         config: CandidateGeneratorConfig | None = None,
         domain: str | None = None,
     ) -> None:

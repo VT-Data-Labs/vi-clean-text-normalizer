@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from vn_corrector.common.types import AbbreviationEntry, LexiconEntry
+from vn_corrector.common.types import AbbreviationEntry, LexiconEntry, LexiconStoreInterface
 from vn_corrector.stage1_normalize import to_no_tone_key
 from vn_corrector.stage4_candidates.sources.base import CandidateSourceGenerator
 from vn_corrector.stage4_candidates.types import (
@@ -18,7 +18,6 @@ from vn_corrector.stage4_candidates.types import (
     CandidateProposal,
     CandidateRequest,
     CandidateSource,
-    LexiconStoreProtocol,
 )
 
 
@@ -110,7 +109,7 @@ class EditDistanceSource(CandidateSourceGenerator):
 
 
 def _get_prefix_candidates(
-    lexicon: LexiconStoreProtocol, no_tone: str
+    lexicon: LexiconStoreInterface, no_tone: str
 ) -> list[LexiconEntry | AbbreviationEntry]:
     """Get candidates from lexicon via prefix lookup."""
     candidates: list[LexiconEntry | AbbreviationEntry] = []
@@ -135,7 +134,11 @@ def _get_prefix_candidates(
         try:
             lookup_result = lexicon.lookup_accentless(no_tone)
             if lookup_result:
-                candidates = list(lookup_result.entries)
+                candidates = [
+                    e
+                    for e in lookup_result.entries
+                    if isinstance(e, (LexiconEntry, AbbreviationEntry))
+                ]
         except (AttributeError, TypeError):
             pass
 

@@ -8,12 +8,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from vn_corrector.stage4_candidates.config import CandidateGeneratorConfig
 from vn_corrector.stage4_candidates.ranking import rank_candidates
-from vn_corrector.stage4_candidates.types import (
-    Candidate,
-    CandidateGeneratorConfigProtocol,
-    TokenCandidates,
-)
+from vn_corrector.stage4_candidates.types import Candidate, TokenCandidates
 
 
 def estimate_combination_count(
@@ -58,7 +55,7 @@ def trim_candidate_list(
 def trim_window_token_candidates(
     token_candidates: list[TokenCandidates],
     max_combinations: int,
-    config: CandidateGeneratorConfigProtocol,
+    config: CandidateGeneratorConfig,
 ) -> list[TokenCandidates]:
     source_prior_weights = config.source_prior_weights
     keep_original = config.keep_original_first

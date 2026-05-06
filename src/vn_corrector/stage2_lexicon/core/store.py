@@ -19,6 +19,7 @@ from vn_corrector.common.types import (
     AbbreviationEntry,
     LexiconEntry,
     LexiconLookupResult,
+    LexiconStoreInterface,
     OcrConfusionLookupResult,
     PhraseEntry,
 )
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-class LexiconStore(ABC):
+class LexiconStore(LexiconStoreInterface, ABC):
     """Enhanced abstract interface for a Vietnamese lexicon store.
 
     All backends (:class:`~vn_corrector.stage2_lexicon.backends.json_store.JsonLexiconStore`,
@@ -109,6 +110,17 @@ class LexiconStore(ABC):
     @abstractmethod
     def get_syllable_candidates(self, no_tone_key: str) -> list[LexiconEntry]:
         """Return all syllable entries matching a no-tone key."""
+
+    # -- Prefix search (optional, used by edit-distance fallback) ----------
+
+    def query_prefix(self, _prefix: str) -> list[LexiconEntry] | None:
+        """Return entries whose no-tone key starts with *prefix*.
+
+        Optional — backends that do not support prefix search return
+        ``None``.  The caller (EditDistanceSource) falls back to
+        ``lookup_accentless`` in that case.
+        """
+        return None
 
     # -- OCR confusion (preserved) ----------------------------------------
 

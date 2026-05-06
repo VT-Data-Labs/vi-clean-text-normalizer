@@ -1,0 +1,73 @@
+# Golden regression cases for Stage 4 candidate generation.
+#
+# Run with:
+#   pytest tests/stage4_candidates/test_golden.py
+#
+# Each case:
+#   input:         token text to generate candidates for
+#   protected:     whether the token is protected (default false)
+#   expected_contains:  texts that must appear in the candidate set
+#   expected_exact:     the exact candidate set (optional, overrides contains)
+#   expected_sources:   {text: [source_names]} — optional evidence check
+#   description:        human-readable intent
+
+- input: "mùông"
+  expected_contains:
+    - "muỗng"
+  description: "OCR confusion: mùông -> muỗng"
+
+- input: "đẫn"
+  expected_contains:
+    - "dẫn"
+    - "dần"
+  description: "No-tone lookup: đẫn -> dẫn, dần"
+
+- input: "cc"
+  expected_contains:
+    - "chung cư"
+  description: "Abbreviation expansion: cc -> chung cư"
+
+- input: "muỗng"
+  expected_contains:
+    - "muỗng"
+  description: "Known word keeps itself as candidate"
+
+- input: "0978123456"
+  protected: true
+  expected_exact:
+    - "0978123456"
+  description: "Phone number yields identity only"
+
+- input: "HA02"
+  protected: true
+  expected_exact:
+    - "HA02"
+  description: "Product code yields identity only"
+
+- input: ""
+  expected_exact: []
+  description: "Empty string returns empty candidate list"
+
+- input: "dan"
+  expected_contains:
+    - "dẫn"
+    - "dần"
+    - "dân"
+  description: "Plain no-tone input finds accented variants"
+
+- input: "mùông"
+  description: "OCR candidates have correct source provenance"
+  expected_contains:
+    - "muỗng"
+  expected_sources:
+    muỗng:
+      - "ocr_confusion"
+      - "syllable_map"
+
+- input: "cc"
+  description: "Abbreviation candidates have correct source"
+  expected_contains:
+    - "chung cư"
+  expected_sources:
+    chung cư:
+      - "abbreviation"

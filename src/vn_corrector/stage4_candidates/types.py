@@ -6,18 +6,16 @@ and structured output types used throughout the candidate generation pipeline.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Protocol
 
 from vn_corrector.common.types import (
-    AbbreviationEntry,
-    LexiconEntry,
-    PhraseEntry,
+    LexiconStoreInterface,
     Token,
     TokenType,
 )
+from vn_corrector.stage4_candidates.config import CandidateGeneratorConfig
 
 # ---------------------------------------------------------------------------
 # Candidate source enumeration
@@ -120,93 +118,7 @@ class CandidateDocument:
 
 
 # ---------------------------------------------------------------------------
-# Protocol types for duck-typed config/lexicon
-# ---------------------------------------------------------------------------
-
-
-class LexiconLookupResult(Protocol):
-    """Result of ``lookup_accentless``."""
-
-    entries: list[LexiconEntry | AbbreviationEntry]
-
-
-class OcrCorrectionResult(Protocol):
-    """Result of ``get_ocr_corrections``."""
-
-    corrections: tuple[str, ...]
-
-
-class LexiconAbbreviationResult(Protocol):
-    """Result of ``lookup_abbreviation``."""
-
-    entries: list[AbbreviationEntry]
-
-
-class LexiconStoreProtocol(Protocol):
-    """Duck-typed protocol for the lexicon store used by source generators."""
-
-    def get_syllable_candidates(self, no_tone: str) -> Iterable[LexiconEntry]: ...
-    def lookup_accentless(self, no_tone: str) -> LexiconLookupResult | None: ...
-    def lookup_ocr(self, text: str) -> Iterable[str] | None: ...
-    def get_ocr_corrections(self, text: str) -> OcrCorrectionResult: ...
-    def lookup_abbreviation(self, text: str) -> LexiconAbbreviationResult | None: ...
-    def query_prefix(self, prefix: str) -> Iterable[LexiconEntry | AbbreviationEntry] | None: ...
-    def lookup_phrase_str(self, raw_phrase: str) -> object | None: ...
-    def lookup_phrase(self, raw_phrase: str) -> list[PhraseEntry] | None: ...
-    def lookup_phrase_normalized(self, key: str) -> list[PhraseEntry] | None: ...
-
-
-class CandidateGeneratorConfigProtocol(Protocol):
-    """Duck-typed protocol for generator configuration."""
-
-    @property
-    def enable_original(self) -> bool: ...
-    @property
-    def enable_ocr_confusion(self) -> bool: ...
-    @property
-    def enable_syllable_map(self) -> bool: ...
-    @property
-    def enable_word_lexicon(self) -> bool: ...
-    @property
-    def enable_abbreviation(self) -> bool: ...
-    @property
-    def enable_phrase_evidence(self) -> bool: ...
-    @property
-    def enable_domain_specific(self) -> bool: ...
-    @property
-    def enable_edit_distance(self) -> bool: ...
-    @property
-    def max_candidates_per_token(self) -> int: ...
-    @property
-    def max_ocr_replacements_per_token(self) -> int: ...
-    @property
-    def max_edit_distance(self) -> int: ...
-    @property
-    def deterministic_sort(self) -> bool: ...
-    @property
-    def keep_original_first(self) -> bool: ...
-    @property
-    def max_phrase_window(self) -> int: ...
-    @property
-    def min_token_length_for_edit_distance(self) -> int: ...
-    @property
-    def max_token_length_for_edit_distance(self) -> int: ...
-    @property
-    def enable_diagnostics(self) -> bool: ...
-    @property
-    def source_prior_weights(self) -> dict[str, float]: ...
-    @property
-    def identity_token_types(self) -> tuple[str, ...]: ...
-    @property
-    def candidate_token_types(self) -> tuple[str, ...]: ...
-    @property
-    def skip_non_word_tokens(self) -> bool: ...
-    @property
-    def cache_enabled(self) -> bool: ...
-
-
-# ---------------------------------------------------------------------------
-# Internal helper for source generators
+# Context types passed to source generators
 # ---------------------------------------------------------------------------
 
 
@@ -225,8 +137,8 @@ class CandidateContext:
     """Immutable context passed to each source generator."""
 
     tokens: Sequence[Token] | None
-    lexicon: LexiconStoreProtocol
-    config: CandidateGeneratorConfigProtocol
+    lexicon: LexiconStoreInterface
+    config: CandidateGeneratorConfig
 
 
 @dataclass(frozen=True)
@@ -250,13 +162,8 @@ __all__ = [
     "CandidateDocument",
     "CandidateEvidence",
     "CandidateGenerationStats",
-    "CandidateGeneratorConfigProtocol",
     "CandidateProposal",
     "CandidateRequest",
     "CandidateSource",
-    "LexiconAbbreviationResult",
-    "LexiconLookupResult",
-    "LexiconStoreProtocol",
-    "OcrCorrectionResult",
     "TokenCandidates",
 ]
