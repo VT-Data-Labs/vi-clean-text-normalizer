@@ -14,6 +14,7 @@ from vn_corrector.stage4_candidates import (
     CandidateGeneratorConfig,
     CandidateSource,
 )
+from vn_corrector.stage4_candidates.sources.domain_specific import DomainSpecificSource
 from vn_corrector.tokenizer import tokenize
 
 
@@ -157,3 +158,48 @@ class TestEdgeCases:
         small_gen = CandidateGenerator(gen._lexicon, config=config)
         candidates = small_gen.generate_token("mùông")
         assert len(candidates) <= 3
+
+
+# ---------------------------------------------------------------------------
+#  replacement_token_count propagation (M4.5)
+# ---------------------------------------------------------------------------
+
+
+class TestReplacementTokenCount:
+    """Abbreviation expansions with multiple tokens propagate ``replacement_token_count``."""
+
+    def test_cc_has_replacement_token_count(self, gen: CandidateGenerator) -> None:
+        """``cc -> chung cư`` has ``replacement_token_count=2``."""
+        candidates = gen.generate_token("cc")
+        cc = next((c for c in candidates if c.text == "chung cư"), None)
+        assert cc is not None, "chung cư not found in candidates"
+        assert cc.replacement_token_count >= 2, (
+            f"Expected replacement_token_count >= 2, got {cc.replacement_token_count}"
+        )
+
+    def test_single_word_no_replacement_count(self, gen: CandidateGenerator) -> None:
+        """Single-word candidates have ``replacement_token_count=1``."""
+        candidates = gen.generate_token("mùông")
+        for c in candidates:
+            assert c.replacement_token_count == 1, (
+                f"Candidate '{c.text}' has replacement_token_count={c.replacement_token_count}"
+            )
+
+
+# ---------------------------------------------------------------------------
+#  Domain-specific source (M4.5)
+# ---------------------------------------------------------------------------
+
+
+class TestDomainSpecific:
+    """Domain-specific source is registered and produces candidates when domain is set."""
+
+    def test_domain_specific_source_registered(self, gen: CandidateGenerator) -> None:
+        """DomainSpecificSource is registered when enable_domain_specific is True."""
+        assert any(isinstance(s, DomainSpecificSource) for s in gen._sources)
+
+    def test_domain_specific_disabled_when_config_off(self, gen: CandidateGenerator) -> None:
+        """DomainSpecificSource is NOT registered when config disables it."""
+        config = CandidateGeneratorConfig(cache_enabled=False, enable_domain_specific=False)
+        gen_local = CandidateGenerator(gen._lexicon, config=config)
+        assert not any(isinstance(s, DomainSpecificSource) for s in gen_local._sources)

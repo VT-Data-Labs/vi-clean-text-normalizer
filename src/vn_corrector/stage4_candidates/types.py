@@ -134,13 +134,19 @@ class CandidateRequest:
     protected: bool = False
 
 
-@dataclass(frozen=True)
+@dataclass
 class CandidateContext:
-    """Immutable context passed to each source generator."""
+    """Context passed to each source generator.
+
+    The ``tokens`` and ``candidate_texts`` fields are populated by the
+    generator after initial source passes so that PhraseEvidenceSource
+    can inspect all variation texts.
+    """
 
     tokens: Sequence[Token] | None
     lexicon: LexiconStoreInterface
     config: CandidateGeneratorConfig
+    candidate_texts: set[str] = field(default_factory=set)
 
 
 @dataclass(frozen=True)

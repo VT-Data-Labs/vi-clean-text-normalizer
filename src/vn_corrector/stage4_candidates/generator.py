@@ -208,9 +208,11 @@ class CandidateGenerator:
         if request.protected:
             return self._make_protected_candidates(request.token_text)
 
-        # Collect proposals from all enabled sources
+        # Phase 1: Collect proposals from all non-phrase sources
         proposals: list[CandidateProposal] = []
         for source in self._sources:
+            if isinstance(source, PhraseEvidenceSource):
+                continue
             try:
                 for proposal in source.generate(request, context):
                     proposals.append(proposal)
@@ -220,31 +222,25 @@ class CandidateGenerator:
 
                     traceback.print_exc()
 
-        # Merge proposals by text into Candidate objects
-        candidate_map: dict[str, Candidate] = {}
+        # Phase 2: Build candidate map, then run phrase-evidence with full candidate set
+        candidate_map = self._merge_proposals(proposals, request.token_text)
 
-        for prop in proposals:
-            text = prop.text
-            if text not in candidate_map:
-                candidate_map[text] = Candidate(
-                    text=text,
-                    normalized=normalize_text(text),
-                    no_tone_key=to_no_tone_key(text),
-                    sources=set(),
-                    evidence=[],
-                    prior_score=0.0,
-                    is_original=(text == request.token_text),
-                )
+        phrase_source = next(
+            (s for s in self._sources if isinstance(s, PhraseEvidenceSource)), None
+        )
+        if phrase_source is not None:
+            context.candidate_texts = set(candidate_map.keys())
+            try:
+                for proposal in phrase_source.generate(request, context):
+                    proposals.append(proposal)
+            except Exception:
+                if self._config.enable_diagnostics:
+                    import traceback
 
-            cand = candidate_map[text]
-            cand.sources.add(prop.source)
-            cand.evidence.append(prop.evidence)
-            cand.prior_score = max(cand.prior_score, prop.prior_score)
+                    traceback.print_exc()
 
-            if prop.edit_distance is not None and (
-                cand.edit_distance is None or prop.edit_distance < cand.edit_distance
-            ):
-                cand.edit_distance = prop.edit_distance
+        # Phase 3: Re-merge with phrase evidence proposals
+        candidate_map = self._merge_proposals(proposals, request.token_text)
 
         candidates = list(candidate_map.values())
 
@@ -265,6 +261,42 @@ class CandidateGenerator:
             )
 
         return candidates
+
+    def _merge_proposals(
+        self,
+        proposals: list[CandidateProposal],
+        original_text: str,
+    ) -> dict[str, Candidate]:
+        """Merge proposals by text into candidate map, propagating metadata."""
+        candidate_map: dict[str, Candidate] = {}
+        for prop in proposals:
+            text = prop.text
+            if text not in candidate_map:
+                candidate_map[text] = Candidate(
+                    text=text,
+                    normalized=normalize_text(text),
+                    no_tone_key=to_no_tone_key(text),
+                    sources=set(),
+                    evidence=[],
+                    prior_score=0.0,
+                    is_original=(text == original_text),
+                )
+            cand = candidate_map[text]
+            cand.sources.add(prop.source)
+            cand.evidence.append(prop.evidence)
+            cand.prior_score = max(cand.prior_score, prop.prior_score)
+
+            if prop.edit_distance is not None and (
+                cand.edit_distance is None or prop.edit_distance < cand.edit_distance
+            ):
+                cand.edit_distance = prop.edit_distance
+
+            # Propagate replacement_token_count from evidence metadata
+            rtc = prop.evidence.metadata.get("replacement_token_count", 1)
+            if isinstance(rtc, int) and rtc > cand.replacement_token_count:
+                cand.replacement_token_count = rtc
+
+        return candidate_map
 
     def _make_identity_candidates(self, text: str) -> list[Candidate]:
         """Create a single identity candidate (for identity-only tokens)."""

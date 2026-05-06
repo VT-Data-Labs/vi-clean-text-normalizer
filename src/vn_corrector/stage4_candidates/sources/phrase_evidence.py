@@ -52,8 +52,8 @@ class PhraseEvidenceSource(CandidateSourceGenerator):
         idx = request.token_index
         token_count = len(tokens)
 
-        # Collect all candidate texts for this token (from the caller)
-        candidate_texts = _collect_candidate_texts_for_index(request)
+        # Collect all candidate texts for this token (from the generator)
+        candidate_texts = context.candidate_texts or {request.token_text}
 
         for candidate_text in candidate_texts:
             # Check local windows: [idx-w, idx+w] for w in 1..max_window
@@ -98,13 +98,6 @@ class PhraseEvidenceSource(CandidateSourceGenerator):
                     ),
                     prior_score=prior_weight,
                 )
-
-
-def _collect_candidate_texts_for_index(
-    request: CandidateRequest,
-) -> set[str]:
-    texts: set[str] = {request.token_text}
-    return texts
 
 
 def _phrase_exists(lexicon: LexiconStoreInterface, normalized_key: str, raw_phrase: str) -> bool:

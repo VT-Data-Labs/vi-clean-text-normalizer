@@ -78,6 +78,7 @@ quote-style = "double"
     "ARG001",  # unused function argument (common in pytest fixtures)
     "RUF001",  # ambiguous char detection (intentional: testing non-standard spaces)
     "S101",    # assert in tests is acceptable
+    "S106",    # hardcoded password keyword arg (noisy in tests)
     "S108",    # temp file in tests is intentional
     "D103",    # public function docstring (test functions are self-documenting)
 ]

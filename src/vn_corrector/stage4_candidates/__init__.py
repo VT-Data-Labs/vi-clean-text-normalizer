@@ -12,6 +12,11 @@ Public API
 """
 
 from vn_corrector.stage4_candidates.config import CandidateGeneratorConfig
+from vn_corrector.stage4_candidates.diagnostics import (
+    format_candidate_debug,
+    format_document_debug,
+    format_token_candidates_debug,
+)
 from vn_corrector.stage4_candidates.generator import CandidateGenerator
 from vn_corrector.stage4_candidates.types import (
     Candidate,
@@ -31,4 +36,7 @@ __all__ = [
     "CandidateGeneratorConfig",
     "CandidateSource",
     "TokenCandidates",
+    "format_candidate_debug",
+    "format_document_debug",
+    "format_token_candidates_debug",
 ]

@@ -1,11 +1,13 @@
 """In-memory LRU cache for candidate generation results.
 
-Uses ``functools.lru_cache`` for simple token-level caching and
-a manual cache for context-dependent results.
+Eviction uses true LRU ordering: every ``get()`` hit moves the entry
+to the most-recently-used position, and eviction removes from the
+least-recently-used (oldest) end.
 """
 
 from __future__ import annotations
 
+from collections import OrderedDict
 from typing import cast
 
 from vn_corrector.stage4_candidates.config import CandidateGeneratorConfig
@@ -16,14 +18,16 @@ _SENTINEL = object()
 
 
 class TokenCache:
-    """Simple in-memory cache for token-level candidate results.
+    """LRU in-memory cache for token-level candidate results.
 
     Caches by ``(token_text, token_type_str, protected, config_fingerprint)``.
+    Entries are moved to the most-recently-used position on every hit.
+    Eviction removes least-recently-used entries first.
     """
 
     def __init__(self, maxsize: int = 100_000) -> None:
         self._maxsize = maxsize
-        self._store: dict[tuple[str, str, bool, int], list[Candidate]] = {}
+        self._store: OrderedDict[tuple[str, str, bool, int], list[Candidate]] = OrderedDict()
         self._hits: int = 0
         self._misses: int = 0
 
@@ -55,13 +59,17 @@ class TokenCache:
         protected: bool,
         config: CandidateGeneratorConfig,
     ) -> list[Candidate] | None:
-        """Look up cached result, returning ``None`` on miss."""
+        """Look up cached result, returning ``None`` on miss.
+
+        Moves the entry to the most-recently-used position on hit.
+        """
         key = (token_text, token_type_str, protected, self._fingerprint(config))
         result = self._store.get(key, _SENTINEL)
         if result is _SENTINEL:
             self._misses += 1
             return None
         self._hits += 1
+        self._store.move_to_end(key)  # mark as most recently used
         return cast("list[Candidate]", result)
 
     def put(
@@ -72,9 +80,12 @@ class TokenCache:
         config: CandidateGeneratorConfig,
         candidates: list[Candidate],
     ) -> None:
-        """Store a result in the cache."""
+        """Store a result in the cache.
+
+        Evicts the least-recently-used entries when at capacity.
+        """
         if len(self._store) >= self._maxsize:
-            # Clear oldest ~10% of entries
+            # Evict oldest ~10% of entries (LRU: first items in dict are LRU)
             remove_count = max(1, self._maxsize // 10)
             for _ in range(remove_count):
                 if self._store:
