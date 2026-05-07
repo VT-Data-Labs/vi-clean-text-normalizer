@@ -2,6 +2,7 @@
 .coverage
 coverage.xml
 *.cover
+*,cover
 __pycache__/
 *.py[cod]
 *$py.class
