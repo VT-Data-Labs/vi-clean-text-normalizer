@@ -42,6 +42,9 @@ class FakeLexicon(LexiconStoreInterface):
         "người",
         "vừa",
         "đủ",
+        "nếu",
+        "độ",
+        "ấm",
     }
 
     def contains_word(self, text: str) -> bool:
@@ -281,3 +284,71 @@ class TestPhraseScorer:
         )
         assert identity_score is not None
         assert identity_score >= 0
+
+    def test_accentless_recovery_with_edit_distance(self, scorer: PhraseScorer) -> None:
+        """Corrected accentless phrase outranks identity when edit_distance is set.
+
+        Without edit_distance, identity (all spaces unchanged) wins by a large
+        margin. With edit_distance=1 for diacritic-restored tokens, the corrected
+        sequence should overtake identity.
+        """
+        tcs = [
+            _make_tc(
+                "neu",
+                [
+                    ("neu", True, 0, CandidateSource.ORIGINAL),
+                    ("nếu", False, 1, CandidateSource.SYLLABLE_MAP),
+                    ("nều", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+            _make_tc(
+                "do",
+                [
+                    ("do", True, 0, CandidateSource.ORIGINAL),
+                    ("độ", False, 1, CandidateSource.SYLLABLE_MAP),
+                    ("đợ", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+            _make_tc(
+                "am",
+                [
+                    ("am", True, 0, CandidateSource.ORIGINAL),
+                    ("ấm", False, 1, CandidateSource.SYLLABLE_MAP),
+                    ("ậm", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+            _make_tc(
+                "vua",
+                [
+                    ("vua", True, 0, CandidateSource.ORIGINAL),
+                    ("vừa", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+            _make_tc(
+                "du",
+                [
+                    ("du", True, 0, CandidateSource.ORIGINAL),
+                    ("đủ", False, 1, CandidateSource.SYLLABLE_MAP),
+                    ("đụ", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+        ]
+        windows = build_windows(tcs)
+        assert len(windows) >= 1
+        result = scorer.score_window(windows[0])
+
+        corrected_seq = "nếu độ ấm vừa đủ"
+        identity_seq = "neu do am vua du"
+
+        scores = {" ".join(s.sequence.tokens): s.score for s in result.ranked_sequences}
+
+        assert corrected_seq in scores, (
+            f"Corrected sequence not found in scored sequences. Available: {list(scores.keys())}"
+        )
+        assert identity_seq in scores, "Identity sequence not found"
+
+        assert scores[corrected_seq] > scores[identity_seq], (
+            f"Corrected (score={scores[corrected_seq]:.4f}) should outrank "
+            f"identity (score={scores[identity_seq]:.4f})"
+            " when edit_distance is set for diacritic-restored tokens"
+        )

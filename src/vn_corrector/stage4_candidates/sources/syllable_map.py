@@ -7,6 +7,9 @@ from collections.abc import Iterable
 from vn_corrector.common.lexicon import AbbreviationEntry, LexiconEntry, LexiconStoreInterface
 from vn_corrector.stage1_normalize import to_no_tone_key
 from vn_corrector.stage4_candidates.sources.base import CandidateSourceGenerator
+
+# TODO: expose a public Vietnamese-aware edit distance utility.
+from vn_corrector.stage4_candidates.sources.edit_distance import _levenshtein
 from vn_corrector.stage4_candidates.types import (
     CandidateContext,
     CandidateEvidence,
@@ -53,6 +56,8 @@ class SyllableMapSource(CandidateSourceGenerator):
                     },
                 ),
                 prior_score=prior_weight + freq_val * 0.2,
+                edit_distance=_levenshtein(request.token_text, entry.surface),
+                lexicon_freq=freq_val,
             )
 
 

@@ -96,3 +96,45 @@ class TestGenerateSequences:
         )
         assert len(sequences) == 1
         assert sequences[0].tokens == ("a",)
+
+    def test_truncation_keeps_highest_prior_alternatives(self) -> None:
+        """When max_combinations forces pruning, keep best by prior_score.
+
+        Regression for accentless_004: "do" has độ(0.360) as the best candidate
+        but it is 4th in storage order; đợ(0.270) is 1st. Without sorting by
+        prior_score, độ would be dropped when pruning.
+        """
+        tc_neu = _make_tc("neu", ["neu", "nều", "nếu", "nêu"])
+        tc_do = _make_tc("do", ["do", "đợ", "đỡ", "đờ", "độ", "đỗ", "đổ", "đồ"])
+        tc_am = _make_tc("am", ["am", "ậm", "ẫm", "ẩm", "ầm", "ấm", "ảm", "ạm"])
+        tc_vua = _make_tc("vua", ["vua", "vừa"])
+        tc_du = _make_tc("du", ["du", "đủ"])
+
+        _set_prior(tc_neu, {"nếu": 0.35, "nều": 0.26, "nêu": 0.28})
+        _set_prior(
+            tc_do,
+            {"độ": 0.36, "đồ": 0.32, "đổ": 0.30, "đỡ": 0.29, "đỗ": 0.29, "đờ": 0.28, "đợ": 0.27},
+        )
+        _set_prior(tc_am, {"ấm": 0.32, "ẩm": 0.29, "ầm": 0.28, "ậm": 0.26})
+        _set_prior(tc_vua, {"vừa": 0.34})
+        _set_prior(tc_du, {"đủ": 0.35})
+
+        tcs = [tc_neu, tc_do, tc_am, tc_vua, tc_du]
+        window = CandidateWindow(start=0, end=5, token_candidates=tcs)
+        sequences = generate_sequences(window, max_combinations=100)
+
+        do_position = {seq.tokens[1] for seq in sequences}
+
+        assert "độ" in do_position, (
+            f"Best alternative 'độ'(prior=0.36) was pruned; only got {do_position}"
+        )
+        assert "đợ" not in do_position, (
+            f"Worst alternative 'đợ'(prior=0.27) survived pruning; got {do_position}"
+        )
+
+
+def _set_prior(tc: TokenCandidates, priors: dict[str, float]) -> None:
+    """Set prior_score on candidates matching *priors* keys."""
+    for cand in tc.candidates:
+        if cand.text in priors:
+            cand.prior_score = priors[cand.text]

@@ -293,6 +293,10 @@ class CandidateGenerator:
             ):
                 cand.edit_distance = prop.edit_distance
 
+            # Propagate lexicon frequency for ranking tiebreakers
+            if prop.lexicon_freq > cand.lexicon_freq:
+                cand.lexicon_freq = prop.lexicon_freq
+
             # Propagate replacement_token_count from evidence metadata
             rtc = prop.evidence.metadata.get("replacement_token_count", 1)
             if isinstance(rtc, int) and rtc > cand.replacement_token_count:

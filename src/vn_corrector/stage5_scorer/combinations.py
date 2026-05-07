@@ -26,20 +26,30 @@ def generate_sequences(
 
     candidate_lists: list[list[str]] = []
     for tc in window.token_candidates:
-        texts = [c.text for c in tc.candidates]
-        original = tc.token_text
-        filtered = [original]
-        for t in texts:
-            if t != original and len(filtered) < max_per_token:
-                filtered.append(t)
-        candidate_lists.append(filtered)
+        # Invariant: position 0 is always the original token;
+        # positions 1..N are alternatives sorted by descending prior_score.
+        original_texts = [c.text for c in tc.candidates if c.text == tc.token_text][:1]
+        alternatives = sorted(
+            [c for c in tc.candidates if c.text != tc.token_text],
+            key=lambda c: c.prior_score,
+            reverse=True,
+        )
+        texts = original_texts + [c.text for c in alternatives]
+        candidate_lists.append(texts[:max_per_token])
 
     total = 1
     for cl in candidate_lists:
         total *= len(cl)
 
     if total > max_combinations:
-        max_per_pos = max(2, int(max_combinations ** (1.0 / len(candidate_lists))))
+        # Only count positions with multiple candidates for the root
+        # calculation.  Positions with 1 candidate (e.g. spaces) contribute
+        # factor 1 and should not reduce the effective per-position cap.
+        multi_positions = sum(1 for cl in candidate_lists if len(cl) > 1)
+        if multi_positions > 0:
+            max_per_pos = max(2, int(max_combinations ** (1.0 / multi_positions)))
+        else:
+            max_per_pos = 2
         candidate_lists = [cl[:1] + cl[1:max_per_pos] for cl in candidate_lists]
 
     results: list[CandidateSequence] = []

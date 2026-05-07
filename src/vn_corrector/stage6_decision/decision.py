@@ -50,6 +50,7 @@ class DecisionEngine:
             best_seq = ranked[0]
             best_token = best_seq.sequence.tokens[pos]
             best_score = best_seq.confidence
+            best_raw = best_seq.score
             orig = best_seq.sequence.original_tokens[pos]
 
             second_token, second_score = _find_second_best_for_position(
@@ -58,7 +59,19 @@ class DecisionEngine:
                 best_token,
             )
 
+            second_raw = _find_second_raw_score_for_position(
+                ranked,
+                pos,
+                best_token,
+            )
+
             candidate_sources = _collect_sources(tc)
+
+            # Use raw-score margin when available; fall back to confidence
+            # margin when raw scores are all zero (e.g. test stubs).
+            raw_margin = _safe_margin(best_raw, second_raw)
+            if raw_margin == 0.0 and best_raw == 0.0 and second_raw == 0.0:
+                raw_margin = _safe_margin(best_score, second_score)
 
             decision = self.decide_token(
                 original=orig,
@@ -66,6 +79,7 @@ class DecisionEngine:
                 best_score=best_score,
                 second_best=second_token,
                 second_score=second_score,
+                margin=raw_margin,
                 protected=tc.protected,
                 candidate_sources=candidate_sources,
             )
@@ -81,6 +95,7 @@ class DecisionEngine:
         best_score: float,
         second_best: str | None = None,
         second_score: float = 0.0,
+        margin: float | None = None,
         protected: bool = False,
         candidate_sources: tuple[CandidateIndexSource, ...] = (),
     ) -> CorrectionDecision:
@@ -105,8 +120,6 @@ class DecisionEngine:
                 reason=DecisionReason.PROTECTED,
             )
 
-        margin = _safe_margin(best_score, second_score)
-
         if best == original:
             return CorrectionDecision(
                 original=original,
@@ -114,7 +127,7 @@ class DecisionEngine:
                 best_score=best_score,
                 second_best=second_best,
                 second_score=second_score,
-                margin=margin,
+                margin=margin if margin is not None else _safe_margin(best_score, second_score),
                 decision=DecisionType.REJECT,
                 reason=DecisionReason.IDENTITY,
                 candidate_sources=candidate_sources,
@@ -127,33 +140,35 @@ class DecisionEngine:
                 best_score=best_score,
                 second_best=second_best,
                 second_score=second_score,
-                margin=margin,
+                margin=margin if margin is not None else _safe_margin(best_score, second_score),
                 decision=DecisionType.FLAG,
                 reason=DecisionReason.LOW_CONFIDENCE,
                 candidate_sources=candidate_sources,
             )
 
-        if margin < self._config.ambiguous_margin:
+        effective_margin = margin if margin is not None else _safe_margin(best_score, second_score)
+
+        if effective_margin < self._config.ambiguous_margin:
             return CorrectionDecision(
                 original=original,
                 best=best,
                 best_score=best_score,
                 second_best=second_best,
                 second_score=second_score,
-                margin=margin,
+                margin=effective_margin,
                 decision=DecisionType.FLAG,
                 reason=DecisionReason.AMBIGUOUS,
                 candidate_sources=candidate_sources,
             )
 
-        if margin < self._config.min_margin:
+        if effective_margin < self._config.min_margin:
             return CorrectionDecision(
                 original=original,
                 best=best,
                 best_score=best_score,
                 second_best=second_best,
                 second_score=second_score,
-                margin=margin,
+                margin=effective_margin,
                 decision=DecisionType.NEED_CONTEXT,
                 reason=DecisionReason.NEEDS_CONTEXT,
                 candidate_sources=candidate_sources,
@@ -165,7 +180,7 @@ class DecisionEngine:
             best_score=best_score,
             second_best=second_best,
             second_score=second_score,
-            margin=margin,
+            margin=effective_margin,
             decision=DecisionType.ACCEPT,
             reason=DecisionReason.ACCEPTED,
             candidate_sources=candidate_sources,
@@ -194,6 +209,19 @@ def _find_second_best_for_position(
         if token != best_token:
             return token, scored_seq.confidence
     return None, 0.0
+
+
+def _find_second_raw_score_for_position(
+    ranked_sequences: list[ScoredSequence],
+    position: int,
+    best_token: str,
+) -> float:
+    """Return the raw score of the first sequence at *position* differing from *best_token*."""
+    for scored_seq in ranked_sequences[1:]:
+        token = scored_seq.sequence.tokens[position]
+        if token != best_token:
+            return scored_seq.score
+    return 0.0
 
 
 def _collect_sources(

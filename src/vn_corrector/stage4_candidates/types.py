@@ -155,6 +155,7 @@ class CandidateProposal:
     evidence: CandidateEvidence
     prior_score: float = 0.0
     edit_distance: int | None = None
+    lexicon_freq: float = 0.0
 
     def __post_init__(self) -> None:
         if not self.text:

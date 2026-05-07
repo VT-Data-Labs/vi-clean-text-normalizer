@@ -110,23 +110,25 @@ class PhraseScorer:
     def _score_phrase_ngram(self, tokens: tuple[str, ...]) -> float:
         score = 0.0
         ns = self._ngram_store
-        for i in range(len(tokens) - 1):
-            score += ns.bigram_score(tokens[i], tokens[i + 1])
-        for i in range(len(tokens) - 2):
-            score += ns.trigram_score(tokens[i], tokens[i + 1], tokens[i + 2])
-        for i in range(len(tokens) - 3):
+        content = [t for t in tokens if t.strip()]
+        for i in range(len(content) - 1):
+            score += ns.bigram_score(content[i], content[i + 1])
+        for i in range(len(content) - 2):
+            score += ns.trigram_score(content[i], content[i + 1], content[i + 2])
+        for i in range(len(content) - 3):
             score += ns.fourgram_score(
-                tokens[i],
-                tokens[i + 1],
-                tokens[i + 2],
-                tokens[i + 3],
+                content[i],
+                content[i + 1],
+                content[i + 2],
+                content[i + 3],
             )
         return score
 
     def _score_domain_context(self, tokens: tuple[str, ...], domain: str | None) -> float:
         if not domain or not self._config.enable_domain_context:
             return 0.0
-        return self._ngram_store.domain_phrase_score(domain, tokens)
+        content = tuple(t for t in tokens if t.strip())
+        return self._ngram_store.domain_phrase_score(domain, content)
 
     def _score_ocr_confusion(
         self,
@@ -185,7 +187,8 @@ class PhraseScorer:
         return changed_valid / total
 
     def _score_negative_phrase_penalty(self, tokens: tuple[str, ...]) -> float:
-        return self._ngram_store.negative_phrase_score(tokens)
+        content = tuple(t for t in tokens if t.strip())
+        return self._ngram_store.negative_phrase_score(content)
 
     # -- helpers ------------------------------------------------------------
 

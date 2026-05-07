@@ -31,10 +31,6 @@ def compute_prior_score(
     if candidate.is_original:
         score += 0.05
 
-    # Edit distance penalty
-    if candidate.edit_distance is not None and candidate.edit_distance > 0:
-        score -= candidate.edit_distance * 0.1
-
     # Evidence count bonus (more evidence = more reliable)
     score += len(candidate.evidence) * 0.02
 
