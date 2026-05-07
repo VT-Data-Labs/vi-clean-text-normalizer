@@ -32,7 +32,7 @@ Primary use cases:
 
 ## Project Status
 
-> **Status:** ✅ Milestone 6 complete — Decision Engine with deterministic policy layer
+> **Status:** ✅ Milestone 7 complete — Evaluation harness with CER/WER/precision/recall
 
 ### Implemented
 
@@ -45,7 +45,7 @@ Primary use cases:
 - [x] Built-in JSON resources (syllables, words, units, phrases, abbreviations, OCR confusions, foreign terms)
 - [x] Lexicon build pipeline (syllable, word, phrase, confusion, abbreviation builders)
 - [x] Vietnamese accent stripper for lookup key generation
-- [x] Domain-split types: `common/enums.py`, `common/spans.py`, `common/scoring.py`, `common/correction.py`, `common/contracts.py`, `lexicon/types.py`
+- [x] Domain-split types: `common/enums.py`, `common/spans.py`, `common/scoring.py`, `common/correction.py`, `common/contracts.py`, `common/lexicon.py`
 - [x] Candidate generation (8 source generators, merging, ranking, limit enforcement, LRU cache)
 - [x] Real-lexicon acceptance tests + golden YAML regression suite
 - [x] Benchmark script and debug CLI
@@ -58,7 +58,8 @@ Primary use cases:
 - [x] **Curated phrase dataset** — `resources/phrases/` with 11 positive phrases, 3 negative phrases, and domain-specific entries
 - [x] **NgramStore ABC** — `JsonNgramStore` backend, `scripts/build_ngram_store.py` builder
 - [x] **Decision Engine** — deterministic policy layer with confidence thresholds, margin checks, and change/flag builders
-- [x] 982+ tests across 24 test files
+- [x] **Evaluation harness** — gold test set format (JSONL), CER/WER/precision/recall/overcorrection rate, CLI runner, report generation
+- [x] 1020+ tests across 28 test files
 
 ### Known Limitations
 
@@ -68,8 +69,7 @@ Primary use cases:
 
 ### In Progress
 
-- [ ] Full correction pipeline (Stages 7–9)
-- [ ] Evaluation harness
+- [ ] Full correction pipeline (Stages 8–9)
 - [ ] PyPI release
 
 ---
@@ -91,6 +91,7 @@ Primary use cases:
 - **Curated phrase data** — `resources/phrases/` with 11 positive phrases, 3 negative phrases, domain-specific entries; `scripts/build_ngram_store.py` builder generates a single merged `resources/ngrams/ngram_store.vi.json`
 - **CLI interface** — single-text, batch file, interactive, JSON output modes, plus dedicated subcommands: `lexicon` (info, lookup, candidates, validate) and `candidates` (debug candidate view)
 - **Benchmark script** — `scripts/bench_stage4_candidates.py` for token/sec, cache efficiency, candidate distribution
+- **Evaluation harness** — `scripts/evaluate.py` for running gold test sets with CER/WER/precision/recall/overcorrection metrics and report generation
 
 ---
 
@@ -383,7 +384,7 @@ external dictionaries / corpus
 
 ## Architecture
 
-The full pipeline (Stages 7–9 in development):
+The full pipeline:
 
 ```text
 OCR Raw Text
@@ -407,6 +408,8 @@ Stage 7: Correction Decision         ← implemented (M6)
 Stage 8: Case Restoration            ← implemented
   ↓
 Stage 9: Output + Change Log + Flags
+  ↓
+Evaluation: Gold data → metrics → report  ← implemented (M7)
 ```
 
 ### Module layout
@@ -429,11 +432,8 @@ src/vn_corrector/
 │   ├── constants.py         # Thresholds, weights, pipeline constants
 │   ├── errors.py            # Custom error types
 │   ├── types.py             # Backward-compat re-exports (deprecated)
-│   └── validation.py        # Lexicon entry validation helpers
-├── lexicon/
-│   ├── __init__.py
-│   ├── types.py             # LexiconEntry, AbbreviationEntry, PhraseEntry, LexiconCandidate, etc.
-│   └── interface.py         # LexiconStoreInterface ABC
+│   ├── validation.py        # Lexicon entry validation helpers
+│   └── lexicon.py           # LexiconEntry, AbbreviationEntry, PhraseEntry, LexiconCandidate, LexiconStoreInterface ABC
 ├── utils/
 │   └── unicode.py           # Vietnamese character detection
 ├── stage1_normalize/        # Stage 1 — Unicode normalization engine
@@ -495,6 +495,12 @@ src/vn_corrector/
     ├── flags.py             # CorrectionFlag builders
     ├── pipeline.py          # ScoredWindow → CorrectionResult pipeline
     └── types.py             # Re-exports from common/enums + common/correction
+└── stage7_evaluation/        # Evaluation harness
+    ├── dataset.py            # load_jsonl(), parse_example() — gold test set loader
+    ├── metrics.py            # CER, WER, edit_distance
+    ├── runner.py             # evaluate_examples(), build_report()
+    ├── report.py             # format_report(), report_to_json()
+    └── types.py              # EvaluationExample, ExampleEvaluation, EvaluationReport
 ```
 
 ### Resource files
@@ -589,7 +595,7 @@ patterns:
 ## Testing
 
 ```bash
-# Run all tests (949+ tests across 24 files)
+# Run all tests (1020+ tests across 28 files)
 pytest
 
 # Run with verbose output
@@ -613,7 +619,7 @@ All code MUST follow these rules:
 - **No `Any` or `object` as type annotations** — use concrete types, generic types, or union types
 - **No `# type: ignore` or `# noqa` suppression comments** — fix the underlying type/lint issue instead
 - **DRY — single source of truth** in `src/vn_corrector/common/` submodules and `stage1_normalize/char_normalizer.py`
-- **Domain-split types** — `common/types.py` is deprecated; import from `common/enums.py`, `common/spans.py`, `common/scoring.py`, `common/correction.py`, `common/contracts.py`, `lexicon/types.py`
+- **Domain-split types** — `common/types.py` is deprecated; import from `common/enums.py`, `common/spans.py`, `common/scoring.py`, `common/correction.py`, `common/contracts.py`, `common/lexicon.py`
 
 ```bash
 # Lint and format
@@ -699,10 +705,12 @@ ruff check --fix src tests
 - [x] Replace / keep / flag decisions
 - [x] Explanation objects (CorrectionDecision, CorrectionChange, CorrectionFlag)
 
-### Milestone 7 — Evaluation Harness
+### Milestone 7 — Evaluation Harness ✅
 
-- [ ] Gold test set format (JSONL)
-- [ ] CER / WER / precision / recall / overcorrection rate
+- [x] Gold test set format (JSONL)
+- [x] CER / WER / precision / recall / overcorrection rate
+- [x] Evaluation runner with report generation
+- [x] CLI evaluation script (`scripts/evaluate.py`)
 
 ### Milestone 8 — Feedback Loop
 
