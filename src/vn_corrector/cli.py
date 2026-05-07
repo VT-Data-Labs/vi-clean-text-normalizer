@@ -14,6 +14,7 @@ from dataclasses import asdict
 from typing import Any, Literal, cast
 
 from vn_corrector.common.correction import CorrectionResult
+from vn_corrector.pipeline import correct_text as pipeline_correct_text
 from vn_corrector.stage2_lexicon import LexiconStore, load_default_lexicon
 from vn_corrector.stage2_lexicon.backends.json_store import load_json_resource
 
@@ -239,14 +240,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(raw)
 
 
-def correct_text(text: str, _domain: str | None = None) -> CorrectionResult:
-    """Apply the correction pipeline to input text."""
-    normalized = text.strip()
-    return CorrectionResult(
-        original_text=text,
-        corrected_text=normalized,
-        confidence=1.0 if text == normalized else 0.0,
-    )
+def correct_text(text: str, domain: str | None = None) -> CorrectionResult:
+    """Apply the correction pipeline to input text.
+
+    Delegates to the M6.5 pipeline orchestrator.
+    """
+    return pipeline_correct_text(text, domain)
 
 
 def format_output(result: CorrectionResult) -> str:
