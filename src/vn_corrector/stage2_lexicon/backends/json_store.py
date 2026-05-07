@@ -15,8 +15,7 @@ from pathlib import Path
 from typing import cast
 
 from vn_corrector.common.enums import CandidateIndexSource, LexiconKind, LexiconSource
-from vn_corrector.common.scoring import Score
-from vn_corrector.lexicon.types import (
+from vn_corrector.common.lexicon import (
     AbbreviationEntry,
     LexiconCandidate,
     LexiconEntry,
@@ -26,6 +25,7 @@ from vn_corrector.lexicon.types import (
     PhraseEntry,
     Provenance,
 )
+from vn_corrector.common.scoring import Score
 from vn_corrector.stage2_lexicon.core.accent_stripper import strip_accents
 from vn_corrector.stage2_lexicon.core.normalize import normalize_key
 from vn_corrector.stage2_lexicon.core.store import LexiconStore
@@ -66,7 +66,7 @@ class JsonLexiconStore(LexiconStore):
     builder integration.
 
     This is backward-compatible with the original
-    :class:`vn_corrector.lexicon.store.JsonLexiconStore`.
+    :class:`vn_corrector.common.lexicon.LexiconStoreInterface`.
     """
 
     def __init__(self) -> None:

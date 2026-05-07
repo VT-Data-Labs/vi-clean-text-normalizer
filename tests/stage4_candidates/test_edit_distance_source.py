@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from vn_corrector.lexicon.types import LexiconEntry
+from vn_corrector.common.lexicon import LexiconEntry
 from vn_corrector.stage4_candidates import (
     CandidateGenerator,
     CandidateGeneratorConfig,

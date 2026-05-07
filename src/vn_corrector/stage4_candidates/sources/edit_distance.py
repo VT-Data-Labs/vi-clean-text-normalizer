@@ -9,8 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from vn_corrector.lexicon.interface import LexiconStoreInterface
-from vn_corrector.lexicon.types import AbbreviationEntry, LexiconEntry
+from vn_corrector.common.lexicon import AbbreviationEntry, LexiconEntry, LexiconStoreInterface
 from vn_corrector.stage1_normalize import to_no_tone_key
 from vn_corrector.stage4_candidates.sources.base import CandidateSourceGenerator
 from vn_corrector.stage4_candidates.types import (

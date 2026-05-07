@@ -37,7 +37,7 @@ from enum import StrEnum
 class LexiconKind(StrEnum):
     """Categories of entries stored in the lexicon.
 
-    Used by ``lexicon/types.py`` (:class:`~vn_corrector.lexicon.types.LexiconEntry`)
+    Used by ``common/lexicon.py`` (:class:`~vn_corrector.common.lexicon.LexiconEntry`)
     and all Stage-2 builders to classify dictionary entries.
     """
 
@@ -55,8 +55,8 @@ class LexiconKind(StrEnum):
 class LexiconSource(StrEnum):
     """Provenance tags for where a lexicon entry originated.
 
-    Used by ``lexicon/types.py`` (:class:`~vn_corrector.lexicon.types.Provenance`)
-    and ``lexicon/interface.py``.
+    Used by ``common/lexicon.py`` (:class:`~vn_corrector.common.lexicon.Provenance`)
+    and ``common/lexicon.py``.
     """
 
     BUILT_IN = "built-in"
@@ -138,7 +138,7 @@ class ChangeReason(StrEnum):
 
 class CandidateIndexSource(StrEnum):
     """Identifies which index service produced a
-    :class:`~vn_corrector.lexicon.types.LexiconCandidate`.
+    :class:`~vn_corrector.common.lexicon.LexiconCandidate`.
 
     Used by lexicon backends to tag their output and by Stage-6 decision
     logic to weight or explain candidate provenance.

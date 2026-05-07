@@ -1,7 +1,7 @@
 """Tests for all Stage-2 lexicon builders."""
 
 from vn_corrector.common.enums import LexiconKind, LexiconSource
-from vn_corrector.lexicon.types import (
+from vn_corrector.common.lexicon import (
     AbbreviationEntry,
     LexiconEntry,
     OcrConfusionEntry,

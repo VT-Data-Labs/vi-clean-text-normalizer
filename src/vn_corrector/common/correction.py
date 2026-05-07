@@ -44,8 +44,8 @@ from vn_corrector.common.enums import (
     DecisionType,
     FlagType,
 )
+from vn_corrector.common.lexicon import LexiconCandidate
 from vn_corrector.common.spans import TextSpan
-from vn_corrector.lexicon.types import LexiconCandidate
 
 
 @dataclass(frozen=True, slots=True)

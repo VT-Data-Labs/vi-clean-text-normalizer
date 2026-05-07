@@ -1,13 +1,13 @@
 """Lexicon store — enhanced abstract interface.
 
-Extends the existing :class:`~vn_corrector.lexicon.store.LexiconStore` ABC
+Extends the existing :class:`~vn_corrector.common.lexicon.LexiconStoreInterface` ABC
 with new methods required by M3-M5 integration:
 
 - :meth:`is_protected_token` — bridges M2 → M3.
 - :meth:`get_lexicon_index` — exposes the formal :class:`~.types.LexiconIndex`.
 
 Backward compatibility is maintained: all existing abstract methods from the
-original :class:`~vn_corrector.lexicon.store.LexiconStore` are preserved.
+original :class:`~vn_corrector.common.lexicon.LexiconStoreInterface` are preserved.
 """
 
 from __future__ import annotations
@@ -15,11 +15,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from vn_corrector.lexicon.interface import LexiconStoreInterface
-from vn_corrector.lexicon.types import (
+from vn_corrector.common.lexicon import (
     AbbreviationEntry,
     LexiconEntry,
     LexiconLookupResult,
+    LexiconStoreInterface,
     OcrConfusionLookupResult,
     PhraseEntry,
 )

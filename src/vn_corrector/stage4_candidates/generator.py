@@ -8,8 +8,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from vn_corrector.common.enums import TokenType
+from vn_corrector.common.lexicon import LexiconStoreInterface
 from vn_corrector.common.spans import ProtectedSpan, Token
-from vn_corrector.lexicon.interface import LexiconStoreInterface
 from vn_corrector.stage1_normalize import normalize_text, to_no_tone_key
 from vn_corrector.stage4_candidates.cache import TokenCache
 from vn_corrector.stage4_candidates.config import CandidateGeneratorConfig

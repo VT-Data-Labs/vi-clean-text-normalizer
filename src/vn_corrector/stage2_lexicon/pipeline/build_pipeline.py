@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import Any
 
 from vn_corrector.common.enums import LexiconSource
-from vn_corrector.lexicon.types import (
+from vn_corrector.common.lexicon import (
     AbbreviationEntry,
     LexiconEntry,
     LexiconRecord,

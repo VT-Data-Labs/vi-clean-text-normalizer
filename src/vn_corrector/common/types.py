@@ -55,18 +55,18 @@ from vn_corrector.common.enums import (
     SpanType,
     TokenType,
 )
-from vn_corrector.common.scoring import Score, ScoreBreakdown
-from vn_corrector.common.spans import CaseMask, ProtectedDocument, ProtectedSpan, TextSpan, Token
-from vn_corrector.lexicon.interface import LexiconStoreInterface
-from vn_corrector.lexicon.types import (
+from vn_corrector.common.lexicon import (
     AbbreviationEntry,
     LexiconCandidate,
     LexiconEntry,
     LexiconLookupResult,
     LexiconRecord,
+    LexiconStoreInterface,
     LookupResult,
     OcrConfusionEntry,
     OcrConfusionLookupResult,
     PhraseEntry,
     Provenance,
 )
+from vn_corrector.common.scoring import Score, ScoreBreakdown
+from vn_corrector.common.spans import CaseMask, ProtectedDocument, ProtectedSpan, TextSpan, Token
