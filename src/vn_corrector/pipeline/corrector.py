@@ -8,7 +8,7 @@ from typing import Any
 
 from vn_corrector.common.correction import CorrectionChange, CorrectionFlag, CorrectionResult
 from vn_corrector.common.enums import FlagType
-from vn_corrector.common.spans import ProtectedSpan, TextSpan, Token
+from vn_corrector.common.spans import CaseMask, ProtectedSpan, TextSpan, Token
 from vn_corrector.pipeline.config import PipelineConfig
 from vn_corrector.pipeline.context import PipelineContext, build_pipeline_context
 from vn_corrector.pipeline.errors import PipelineInputTooLargeError
@@ -190,6 +190,14 @@ class TextCorrector:
 
             normalized = normalize(text)
 
+        # --- Step 2b: Case mask (lowercase for processing, restore later) ---
+        case_mask: CaseMask | None = None
+        if ctx.config.enable_case_masking:
+            from vn_corrector.case_mask import apply_case_mask, create_case_mask
+
+            case_mask = create_case_mask(normalized)
+            normalized = case_mask.working
+
         # --- Step 3: Detect protected spans ---
         protected_spans: Sequence[ProtectedSpan] = ()
         if ctx.config.protect_tokens:
@@ -256,6 +264,12 @@ class TextCorrector:
 
         # --- Step 10: Reconstruct ---
         corrected = apply_changes(normalized, accepted)
+
+        # --- Step 10b: Restore original case ---
+        if case_mask is not None:
+            from vn_corrector.case_mask import apply_case_mask
+
+            corrected = apply_case_mask(corrected, case_mask)
 
         # --- Step 11: Compute overall confidence ---
         if not accepted:

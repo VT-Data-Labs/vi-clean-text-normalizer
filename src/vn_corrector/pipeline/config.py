@@ -13,6 +13,9 @@ class PipelineConfig:
         Run Unicode and whitespace normalization before correction.
     protect_tokens:
         Detect and protect spans (URLs, phones, numbers, etc.).
+    enable_case_masking:
+        Mask uppercase input to lowercase before correction, then restore
+        original case in the output.
     max_candidates_per_token:
         Maximum candidates to consider per token.
     max_window_size:
@@ -38,6 +41,7 @@ class PipelineConfig:
 
     normalize: bool = True
     protect_tokens: bool = True
+    enable_case_masking: bool = True
     max_candidates_per_token: int = 8
     max_window_size: int = 5
     min_accept_confidence: float = 0.72
