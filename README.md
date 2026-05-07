@@ -32,7 +32,7 @@ Primary use cases:
 
 ## Project Status
 
-> **Status:** ✅ Milestone 5 complete — n-gram phrase scorer with deterministic context-aware ranking
+> **Status:** ✅ Milestone 6 complete — Decision Engine with deterministic policy layer
 
 ### Implemented
 
@@ -45,7 +45,7 @@ Primary use cases:
 - [x] Built-in JSON resources (syllables, words, units, phrases, abbreviations, OCR confusions, foreign terms)
 - [x] Lexicon build pipeline (syllable, word, phrase, confusion, abbreviation builders)
 - [x] Vietnamese accent stripper for lookup key generation
-- [x] Shared types, constants, validation, and error enums
+- [x] Domain-split types: `common/enums.py`, `common/spans.py`, `common/scoring.py`, `common/correction.py`, `common/contracts.py`, `lexicon/types.py`
 - [x] Candidate generation (8 source generators, merging, ranking, limit enforcement, LRU cache)
 - [x] Real-lexicon acceptance tests + golden YAML regression suite
 - [x] Benchmark script and debug CLI
@@ -57,7 +57,8 @@ Primary use cases:
 - [x] **Explainability** — per-token `CorrectionEvidence` with score deltas and JSON-serializable breakdowns
 - [x] **Curated phrase dataset** — `resources/phrases/` with 11 positive phrases, 3 negative phrases, and domain-specific entries
 - [x] **NgramStore ABC** — `JsonNgramStore` backend, `scripts/build_ngram_store.py` builder
-- [x] 949+ tests across 24 test files
+- [x] **Decision Engine** — deterministic policy layer with confidence thresholds, margin checks, and change/flag builders
+- [x] 982+ tests across 24 test files
 
 ### Known Limitations
 
@@ -68,7 +69,6 @@ Primary use cases:
 ### In Progress
 
 - [ ] Full correction pipeline (Stages 7–9)
-- [ ] Decision engine
 - [ ] Evaluation harness
 - [ ] PyPI release
 
@@ -137,7 +137,7 @@ from vn_corrector.protected_tokens import protect
 
 doc = protect("Liên hệ support@example.com hoặc gọi 1900-1009")
 # doc.masked_text: "Liên hệ <<EMAIL_0>> hoặc gọi <<PHONE_0>>"
-# doc.spans: [Span(type=EMAIL, ...), Span(type=PHONE, ...)]
+# doc.spans: [ProtectedSpan(type=EMAIL, ...), ProtectedSpan(type=PHONE, ...)]
 ```
 
 ---
@@ -346,7 +346,7 @@ store.contains_word("số muỗng")  # True
 store.contains_foreign_word("DHA")  # True
 
 # OCR confusion corrections
-store.get_ocr_corrections("mùông")  # OcrConfusionLookupResult with Candidate objects
+store.get_ocr_corrections("mùông")  # OcrConfusionLookupResult with LexiconCandidate objects
 
 # Phrase matching
 store.lookup_phrase_str("so muong gat ngang")  # "số muỗng gạt ngang"
@@ -402,7 +402,7 @@ Stage 5: Candidate Generation        ← implemented
   ↓
 Stage 6: Candidate Scoring           ← implemented (M5)
   ↓
-Stage 7: Correction Decision         ← not yet implemented
+Stage 7: Correction Decision         ← implemented (M6)
   ↓
 Stage 8: Case Restoration            ← implemented
   ↓
@@ -420,15 +420,20 @@ src/vn_corrector/
 ├── tokenizer.py             # Tokenization with roundtrip (Stage 4)
 ├── protected_tokens.py      # Re-exports from stage3_protect
 ├── common/
+│   ├── __init__.py
+│   ├── enums.py             # Pipeline-wide enums (TokenType, SpanType, CandidateIndexSource, etc.)
+│   ├── spans.py             # TextSpan, ProtectedSpan, ProtectedDocument, Token, CaseMask
+│   ├── scoring.py           # Score, ScoreBreakdown
+│   ├── correction.py        # CorrectionDecision, CorrectionChange, CorrectionFlag, CorrectionResult
+│   ├── contracts.py         # M4→M5→M6 DTOs (CandidateWindow, ScoredSequence, etc.)
 │   ├── constants.py         # Thresholds, weights, pipeline constants
-│   ├── errors.py            # Flag types, decision types, case patterns
-│   ├── types.py             # Core dataclasses (Token, CaseMask, Span, CorrectionResult, etc.)
+│   ├── errors.py            # Custom error types
+│   ├── types.py             # Backward-compat re-exports (deprecated)
 │   └── validation.py        # Lexicon entry validation helpers
 ├── lexicon/
-│   ├── __init__.py          # Re-exports: LexiconStore, JsonLexiconStore, SqliteLexiconStore
-│   ├── store.py             # LexiconStore ABC + JsonLexiconStore
-│   ├── backends.py          # SqliteLexiconStore (stdlib sqlite3)
-│   └── accent_stripper.py   # Vietnamese diacritic stripping
+│   ├── __init__.py
+│   ├── types.py             # LexiconEntry, AbbreviationEntry, PhraseEntry, LexiconCandidate, etc.
+│   └── interface.py         # LexiconStoreInterface ABC
 ├── utils/
 │   └── unicode.py           # Vietnamese character detection
 ├── stage1_normalize/        # Stage 1 — Unicode normalization engine
@@ -451,14 +456,14 @@ src/vn_corrector/
         ├── base.py          # Matcher ABC
         ├── regex.py         # RegexMatcher — pattern-based detection
         └── lexicon.py       # LexiconMatcher — dictionary-based detection
-└── stage4_candidates/       # Stage 5 — Candidate generation
+└── stage4_candidates/       # Stage 4 — Candidate generation
     ├── config.py            # CandidateGeneratorConfig
     ├── generator.py         # CandidateGenerator orchestrator
     ├── cache.py             # TokenCache with LRU eviction
     ├── limits.py            # Candidate trimming + window enforcement
     ├── ranking.py           # Deterministic prior-score ranking
     ├── diagnostics.py       # Explainability helpers
-    ├── types.py             # Candidate, CandidateContext, CandidateProposal, etc.
+    ├── types.py             # Stage4Candidate, TokenCandidates, CandidateProposal, etc.
     └── sources/             # 8 source generators
         ├── base.py          # CandidateSourceGenerator ABC
         ├── original.py      # Identity / protected bypass
@@ -469,10 +474,10 @@ src/vn_corrector/
         ├── phrase_evidence.py  # Phrase-context tagging
         ├── edit_distance.py # Controlled approximate matching
         └── domain_specific.py  # Domain-filtered candidates
-└── stage5_scorer/           # Stage 6 — N-gram phrase scorer
+└── stage5_scorer/           # Stage 5 — N-gram phrase scorer
     ├── config.py            # PhraseScorerConfig
     ├── weights.py           # ScoringWeights dataclass
-    ├── types.py             # ScoreBreakdown, CandidateWindow, ScoredSequence, etc.
+    ├── types.py             # Re-exports from common/contracts + common/scoring
     ├── ngram_store.py       # NgramStore ABC
     ├── windowing.py         # Bounded window builder around ambiguous tokens
     ├── combinations.py      # Candidate sequence generation with identity preservation
@@ -482,6 +487,14 @@ src/vn_corrector/
     └── backends/
         ├── __init__.py
         └── json_ngram_store.py  # JsonNgramStore — loads from resources/ngrams/ngram_store.vi.json
+└── stage6_decision/         # Stage 6 — Decision engine
+    ├── __init__.py
+    ├── config.py            # DecisionEngineConfig
+    ├── decision.py          # DecisionEngine — deterministic policy layer
+    ├── changes.py           # CorrectionChange builders
+    ├── flags.py             # CorrectionFlag builders
+    ├── pipeline.py          # ScoredWindow → CorrectionResult pipeline
+    └── types.py             # Re-exports from common/enums + common/correction
 ```
 
 ### Resource files
@@ -598,8 +611,9 @@ All code MUST follow these rules:
 
 - **Use abstract base classes (ABC), not `Protocol`** — shared interfaces use `ABC` with `@abstractmethod`
 - **No `Any` or `object` as type annotations** — use concrete types, generic types, or union types
-- **No `# type: ignore` or `# noqa` suppression comments**
-- **DRY — single source of truth** in `src/vn_corrector/common/` and `stage1_normalize/char_normalizer.py`
+- **No `# type: ignore` or `# noqa` suppression comments** — fix the underlying type/lint issue instead
+- **DRY — single source of truth** in `src/vn_corrector/common/` submodules and `stage1_normalize/char_normalizer.py`
+- **Domain-split types** — `common/types.py` is deprecated; import from `common/enums.py`, `common/spans.py`, `common/scoring.py`, `common/correction.py`, `common/contracts.py`, `lexicon/types.py`
 
 ```bash
 # Lint and format
@@ -677,13 +691,13 @@ ruff check --fix src tests
 - [x] Per-token `CorrectionEvidence` with score deltas and `format_explanation()` output
 - [x] `format_scored_window()` diagnostics for debug CLI
 - [x] Acceptance tests (6 cases) using live phrase data
-- [x] 949+ tests across 24 files
+- [x] 982+ tests across 24 files
 
-### Milestone 6 — Decision Engine
+### Milestone 6 — Decision Engine ✅
 
-- [ ] Confidence and margin calculation
-- [ ] Replace / keep / flag decisions
-- [ ] Explanation objects
+- [x] Confidence and margin calculation
+- [x] Replace / keep / flag decisions
+- [x] Explanation objects (CorrectionDecision, CorrectionChange, CorrectionFlag)
 
 ### Milestone 7 — Evaluation Harness
 
