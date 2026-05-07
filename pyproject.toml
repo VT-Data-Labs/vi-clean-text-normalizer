@@ -88,6 +88,9 @@ python_version = "3.12"
 strict = true
 allow_untyped_decorators = true
 warn_unused_ignores = true
+mypy_path = "src"
+namespace_packages = true
+explicit_package_bases = true
 exclude = ["scripts/build_lexicon_db.py", "scripts/build_trusted_lexicon.py"]
 
 [[tool.mypy.overrides]]
