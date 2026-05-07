@@ -4,6 +4,11 @@
 
 [![Python versions](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
 [![CI](https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer/actions/workflows/ci.yml/badge.svg)](https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-pytest-blue.svg)](#testing)
+[![Lint](https://img.shields.io/badge/lint-ruff-purple.svg)](#code-quality)
+[![Type Checked](https://img.shields.io/badge/type--checked-mypy-blue.svg)](#code-quality)
+[![codecov](https://img.shields.io/codecov/c/github/Vi-Lang-Foundation/vi-clean-text-normalizer)](https://codecov.io/gh/Vi-Lang-Foundation/vi-clean-text-normalizer)
+[![Codacy](https://app.codacy.com/project/badge/Grade/99d5369ee6f84e70bbdd16eb345d1c98)](https://app.codacy.com/gh/Vi-Lang-Foundation/vi-clean-text-normalizer/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![License](https://img.shields.io/github/license/Vi-Lang-Foundation/vi-clean-text-normalizer.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-alpha-orange.svg)](#project-status)
 
