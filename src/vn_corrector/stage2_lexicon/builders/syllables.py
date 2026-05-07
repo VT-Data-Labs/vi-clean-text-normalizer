@@ -16,13 +16,9 @@ A list of dictionaries with keys ``base``, ``forms``, and optionally ``freq``::
 
 from __future__ import annotations
 
-from vn_corrector.common.types import (
-    LexiconEntry,
-    LexiconKind,
-    LexiconSource,
-    Provenance,
-    Score,
-)
+from vn_corrector.common.enums import LexiconKind, LexiconSource
+from vn_corrector.common.scoring import Score
+from vn_corrector.lexicon.types import LexiconEntry, Provenance
 from vn_corrector.stage2_lexicon.builders.base import LexiconBuilder
 from vn_corrector.stage2_lexicon.core.types import BuilderInput, BuilderOutput
 

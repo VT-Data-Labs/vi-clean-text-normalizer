@@ -5,19 +5,17 @@ from typing import cast
 
 from pytest import approx
 
-from vn_corrector.stage4_candidates.types import TokenCandidates
-from vn_corrector.stage5_scorer.types import (
+from vn_corrector.common.contracts import (
     CandidateSequence,
     CandidateWindow,
-    ScoreBreakdown,
     ScoredSequence,
     ScoredWindow,
 )
+from vn_corrector.common.enums import DecisionType
+from vn_corrector.common.scoring import ScoreBreakdown
+from vn_corrector.stage4_candidates.types import TokenCandidates
 from vn_corrector.stage6_decision.decision import DecisionEngine
-from vn_corrector.stage6_decision.types import (
-    DecisionReason,
-    DecisionType,
-)
+from vn_corrector.stage6_decision.types import DecisionReason
 
 # ---------------------------------------------------------------------------
 # Test 1 — accepts safe correction

@@ -70,7 +70,7 @@ class TestJsonLexiconStoreNewMethods:
         assert entries[0].surface == "muỗng"
 
     def test_index_by_kind_contains_syllables(self):
-        from vn_corrector.common.types import LexiconKind
+        from vn_corrector.common.enums import LexiconKind
 
         idx = self.store.get_lexicon_index()
         syllables = idx.entries_by_kind(LexiconKind.SYLLABLE)

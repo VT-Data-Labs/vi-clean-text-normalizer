@@ -6,11 +6,8 @@ Consumes abbreviation → expansion(s) rules and produces
 
 from __future__ import annotations
 
-from vn_corrector.common.types import (
-    AbbreviationEntry,
-    Provenance,
-    Score,
-)
+from vn_corrector.common.scoring import Score
+from vn_corrector.lexicon.types import AbbreviationEntry, Provenance
 from vn_corrector.stage2_lexicon.builders.base import LexiconBuilder
 from vn_corrector.stage2_lexicon.core.types import BuilderInput, BuilderOutput
 

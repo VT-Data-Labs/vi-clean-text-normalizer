@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pathlib
 
-from vn_corrector.common.types import ProtectedDocument
+from vn_corrector.common.spans import ProtectedDocument
 from vn_corrector.stage3_protect import Matcher, load_matchers
 from vn_corrector.stage3_protect.engine import (
     PH_LEFT,

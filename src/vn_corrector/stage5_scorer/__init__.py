@@ -7,20 +7,20 @@ sequences, and scores them using phrase n-gram evidence, domain context,
 OCR confusion support, and overcorrection prevention.
 """
 
-from vn_corrector.stage5_scorer.config import PhraseScorerConfig
-from vn_corrector.stage5_scorer.diagnostics import format_scored_window
-from vn_corrector.stage5_scorer.explain import format_explanation
-from vn_corrector.stage5_scorer.scorer import PhraseScorer
-from vn_corrector.stage5_scorer.types import (
+from vn_corrector.common.contracts import (
     CandidateSequence,
     CandidateWindow,
     CorrectionEvidence,
     MetadataValue,
-    ScoreBreakdown,
     ScoredSequence,
     ScoredWindow,
     TokenCorrectionExplanation,
 )
+from vn_corrector.common.scoring import ScoreBreakdown
+from vn_corrector.stage5_scorer.config import PhraseScorerConfig
+from vn_corrector.stage5_scorer.diagnostics import format_scored_window
+from vn_corrector.stage5_scorer.explain import format_explanation
+from vn_corrector.stage5_scorer.scorer import PhraseScorer
 from vn_corrector.stage5_scorer.weights import ScoringWeights
 
 __all__ = [

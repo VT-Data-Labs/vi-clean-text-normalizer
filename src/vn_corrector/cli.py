@@ -13,7 +13,7 @@ import sys
 from dataclasses import asdict
 from typing import Any, Literal, cast
 
-from vn_corrector.common.types import CorrectionResult
+from vn_corrector.common.correction import CorrectionResult
 from vn_corrector.stage2_lexicon import LexiconStore, load_default_lexicon
 from vn_corrector.stage2_lexicon.backends.json_store import load_json_resource
 

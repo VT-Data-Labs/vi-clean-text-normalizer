@@ -10,14 +10,11 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from vn_corrector.common.types import (
-    LexiconStoreInterface,
-    Token,
-    TokenType,
-)
+from vn_corrector.common.contracts import MetadataValue
+from vn_corrector.common.enums import TokenType
+from vn_corrector.common.spans import Token
+from vn_corrector.lexicon.interface import LexiconStoreInterface
 from vn_corrector.stage4_candidates.config import CandidateGeneratorConfig
-
-MetadataValue = str | int | float | bool | None
 
 # ---------------------------------------------------------------------------
 # Candidate source enumeration
@@ -173,6 +170,5 @@ __all__ = [
     "CandidateProposal",
     "CandidateRequest",
     "CandidateSource",
-    "MetadataValue",
     "TokenCandidates",
 ]

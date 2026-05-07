@@ -1,6 +1,6 @@
 """Core pipeline — protect, mask, restore, conflict resolution.
 
-The engine operates solely on ``Matcher`` and ``Span`` objects.
+The engine operates solely on ``Matcher`` and ``ProtectedSpan`` objects.
 It has **no** knowledge of regex, YAML, or lexicon files — those are
 handled by ``registry.py`` and the ``matchers/`` subpackage.
 """
@@ -10,7 +10,8 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Sequence
 
-from vn_corrector.common.types import ProtectedDocument, Span, SpanType
+from vn_corrector.common.enums import SpanType
+from vn_corrector.common.spans import ProtectedDocument, ProtectedSpan
 from vn_corrector.stage3_protect.matchers.base import Matcher
 
 # ---------------------------------------------------------------------------
@@ -31,7 +32,7 @@ def make_placeholder(span_type: SpanType, idx: int) -> str:
 # ---------------------------------------------------------------------------
 
 
-def resolve_conflicts(candidates: list[Span], text_length: int) -> list[Span]:
+def resolve_conflicts(candidates: list[ProtectedSpan], text_length: int) -> list[ProtectedSpan]:
     """Resolve overlapping spans via greedy selection.
 
     Rules (applied in sort order):
@@ -47,7 +48,7 @@ def resolve_conflicts(candidates: list[Span], text_length: int) -> list[Span]:
     candidates.sort(key=lambda s: (s.start, -s.priority, -(s.end - s.start)))
 
     occupied = [False] * text_length
-    final: list[Span] = []
+    final: list[ProtectedSpan] = []
 
     for span in candidates:
         if span.start < 0 or span.end > text_length:
@@ -66,7 +67,7 @@ def resolve_conflicts(candidates: list[Span], text_length: int) -> list[Span]:
 # ---------------------------------------------------------------------------
 
 
-def mask(text: str, spans: list[Span]) -> tuple[str, dict[str, str]]:
+def mask(text: str, spans: list[ProtectedSpan]) -> tuple[str, dict[str, str]]:
     """Replace protected spans in *text* with placeholders.
 
     Returns the masked string and a ``{placeholder: original_value}`` map.
@@ -116,7 +117,7 @@ def protect(text: str, matchers: Sequence[Matcher]) -> ProtectedDocument:
 
     Invariant: ``restore(doc.masked_text, doc.placeholder_map) == doc.original_text``
     """
-    candidates: list[Span] = []
+    candidates: list[ProtectedSpan] = []
     for matcher in matchers:
         candidates.extend(matcher.find(text))
 

@@ -38,7 +38,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from vn_corrector.common.types import LexiconKind
+from vn_corrector.common.enums import LexiconKind
 from vn_corrector.stage1_normalize import (
     normalize_text,
     strip_accents,

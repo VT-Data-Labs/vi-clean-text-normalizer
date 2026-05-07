@@ -7,7 +7,7 @@ on misses.
 
 from __future__ import annotations
 
-from vn_corrector.common.types import (
+from vn_corrector.lexicon.types import (
     AbbreviationEntry,
     LexiconEntry,
     LexiconLookupResult,

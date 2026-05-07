@@ -17,7 +17,8 @@ import tempfile
 import pytest
 import yaml
 
-from vn_corrector.common.types import ProtectedDocument, Span, SpanType
+from vn_corrector.common.enums import SpanType
+from vn_corrector.common.spans import ProtectedDocument, ProtectedSpan
 from vn_corrector.stage3_protect import Matcher, load_matchers, mask, protect, restore
 from vn_corrector.stage3_protect.engine import make_placeholder, resolve_conflicts
 from vn_corrector.stage3_protect.matchers.lexicon import LexiconMatcher
@@ -35,8 +36,8 @@ def _span(
     stype: SpanType = SpanType.NUMBER,
     priority: int = 1,
     value: str = "",
-) -> Span:
-    return Span(
+) -> ProtectedSpan:
+    return ProtectedSpan(
         type=stype,
         start=start,
         end=end,
@@ -97,8 +98,8 @@ class TestConflictResolution:
     def test_out_of_bounds_span_skipped(self):
         candidates = [_span(-1, 3), _span(2, 8), _span(0, 3)]
         final = resolve_conflicts(candidates, 10)
-        # Span(-1,3) skipped (start < 0). Span(0,3) selected.
-        # Span(2,8) skipped (overlaps with occupied[2:3]).
+        # ProtectedSpan(-1,3) skipped (start < 0). ProtectedSpan(0,3) selected.
+        # ProtectedSpan(2,8) skipped (overlaps with occupied[2:3]).
         assert len(final) == 1
         assert final[0].start == 0
 
@@ -142,7 +143,7 @@ class TestMaskRestore:
                 ],
             ),
         ]
-        candidates: list[Span] = []
+        candidates: list[ProtectedSpan] = []
         for m in matchers:
             candidates.extend(m.find(text))
         final = resolve_conflicts(candidates, len(text))

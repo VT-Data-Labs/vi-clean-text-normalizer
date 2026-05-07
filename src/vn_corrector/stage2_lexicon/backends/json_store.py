@@ -14,19 +14,17 @@ import json
 from pathlib import Path
 from typing import cast
 
-from vn_corrector.common.types import (
+from vn_corrector.common.enums import CandidateIndexSource, LexiconKind, LexiconSource
+from vn_corrector.common.scoring import Score
+from vn_corrector.lexicon.types import (
     AbbreviationEntry,
-    Candidate,
-    CandidateSource,
+    LexiconCandidate,
     LexiconEntry,
-    LexiconKind,
     LexiconLookupResult,
-    LexiconSource,
     OcrConfusionEntry,
     OcrConfusionLookupResult,
     PhraseEntry,
     Provenance,
-    Score,
 )
 from vn_corrector.stage2_lexicon.core.accent_stripper import strip_accents
 from vn_corrector.stage2_lexicon.core.normalize import normalize_key
@@ -446,7 +444,7 @@ class JsonLexiconStore(LexiconStore):
         corrections = self._ocr_data.get(noisy)
         if corrections:
             candidates = tuple(
-                Candidate(text=c, score=0.7, source=CandidateSource.OCR_CONFUSION_INDEX)
+                LexiconCandidate(text=c, score=0.7, source=CandidateIndexSource.OCR_CONFUSION_INDEX)
                 for c in corrections
             )
             return OcrConfusionLookupResult(query=noisy, found=True, corrections=candidates)

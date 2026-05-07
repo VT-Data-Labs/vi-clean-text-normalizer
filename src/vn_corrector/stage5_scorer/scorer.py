@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from vn_corrector.common.types import LexiconStoreInterface
+from vn_corrector.lexicon.interface import LexiconStoreInterface
 from vn_corrector.stage4_candidates.types import CandidateSource
 from vn_corrector.stage5_scorer.combinations import generate_sequences
 from vn_corrector.stage5_scorer.config import PhraseScorerConfig

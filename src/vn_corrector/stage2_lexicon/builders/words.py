@@ -7,12 +7,9 @@ domain-specific vocabulary.
 
 from __future__ import annotations
 
-from vn_corrector.common.types import (
-    LexiconEntry,
-    LexiconKind,
-    Provenance,
-    Score,
-)
+from vn_corrector.common.enums import LexiconKind
+from vn_corrector.common.scoring import Score
+from vn_corrector.lexicon.types import LexiconEntry, Provenance
 from vn_corrector.stage2_lexicon.builders.base import LexiconBuilder
 from vn_corrector.stage2_lexicon.core.accent_stripper import strip_accents
 from vn_corrector.stage2_lexicon.core.types import BuilderInput, BuilderOutput

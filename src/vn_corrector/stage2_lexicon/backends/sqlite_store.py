@@ -14,18 +14,16 @@ import sqlite3
 from pathlib import Path
 from typing import cast
 
-from vn_corrector.common.types import (
+from vn_corrector.common.enums import CandidateIndexSource, LexiconKind, LexiconSource
+from vn_corrector.common.scoring import Score
+from vn_corrector.lexicon.types import (
     AbbreviationEntry,
-    Candidate,
-    CandidateSource,
+    LexiconCandidate,
     LexiconEntry,
-    LexiconKind,
     LexiconLookupResult,
-    LexiconSource,
     OcrConfusionLookupResult,
     PhraseEntry,
     Provenance,
-    Score,
 )
 from vn_corrector.stage2_lexicon.core.accent_stripper import strip_accents
 from vn_corrector.stage2_lexicon.core.normalize import normalize_key
@@ -326,7 +324,7 @@ class SqliteLexiconStore(LexiconStore):
         corrections: list[str] = json.loads(row["corrections"])
         score = row["confidence"]
         candidates = tuple(
-            Candidate(text=c, score=score, source=CandidateSource.OCR_CONFUSION_INDEX)
+            LexiconCandidate(text=c, score=score, source=CandidateIndexSource.OCR_CONFUSION_INDEX)
             for c in corrections
         )
         return OcrConfusionLookupResult(query=noisy, found=True, corrections=candidates)

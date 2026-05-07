@@ -13,13 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
-from vn_corrector.common.types import (
-    LexiconEntry,
-    LexiconKind,
-    LexiconRecord,
-    LexiconSource,
-    Provenance,
-)
+from vn_corrector.common.enums import LexiconKind, LexiconSource
+from vn_corrector.lexicon.types import LexiconEntry, LexiconRecord, Provenance
 
 EntryT = TypeVar("EntryT", bound=LexiconRecord)
 

@@ -6,11 +6,8 @@ from typing import Any, ClassVar
 
 import pytest
 
-from vn_corrector.common.types import (
-    LexiconLookupResult,
-    LexiconStoreInterface,
-    OcrConfusionLookupResult,
-)
+from vn_corrector.lexicon.interface import LexiconStoreInterface
+from vn_corrector.lexicon.types import LexiconLookupResult, OcrConfusionLookupResult
 from vn_corrector.stage4_candidates.types import (
     Candidate,
     CandidateEvidence,

@@ -15,11 +15,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from vn_corrector.common.types import (
+from vn_corrector.lexicon.interface import LexiconStoreInterface
+from vn_corrector.lexicon.types import (
     AbbreviationEntry,
     LexiconEntry,
     LexiconLookupResult,
-    LexiconStoreInterface,
     OcrConfusionLookupResult,
     PhraseEntry,
 )

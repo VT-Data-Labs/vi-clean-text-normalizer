@@ -5,7 +5,8 @@ from __future__ import annotations
 from re import IGNORECASE
 from re import compile as re_compile
 
-from vn_corrector.common.types import Span, SpanType
+from vn_corrector.common.enums import SpanType
+from vn_corrector.common.spans import ProtectedSpan
 from vn_corrector.stage3_protect.matchers.base import Matcher
 
 
@@ -66,12 +67,12 @@ class LexiconMatcher(Matcher):
             return f"\\b{re_compile(entry).pattern}\\b"
         return re_compile(entry).pattern
 
-    def find(self, text: str) -> list[Span]:
+    def find(self, text: str) -> list[ProtectedSpan]:
         if self._regex is None:
             return []
 
         return [
-            Span(
+            ProtectedSpan(
                 type=self.span_type,
                 start=m.start(),
                 end=m.end(),

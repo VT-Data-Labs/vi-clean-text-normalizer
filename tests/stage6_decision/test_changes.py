@@ -1,6 +1,7 @@
 """Tests for M6 change builder — decision_to_change."""
 
-from vn_corrector.common.types import ChangeReason, CorrectionDecision, DecisionType
+from vn_corrector.common.correction import CorrectionDecision
+from vn_corrector.common.enums import ChangeReason, DecisionType
 from vn_corrector.stage6_decision.changes import decision_to_change
 
 

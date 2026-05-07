@@ -8,10 +8,19 @@ Read `PROJECT.md` before making changes. If your implementation conflicts with `
 
 - **Python 3.12+** (see `.python-version`), managed with **uv**.
 - Dev install: `uv sync --all-extras`
-- Run CLI: `uv run corrector "text"` or `corrector "text"` (entrypoint: `vn_corrector.cli:main`)
+- CI install: `uv sync --frozen --all-extras`
+- Run CLI: `uv run corrector "text"`, or `corrector candidates "người dẫn"`, or `corrector lexicon lookup muỗng` (entrypoint: `vn_corrector.cli:main`)
 - Formatter: `ruff format src tests`
 - CI order (also the pre-commit order): `ruff check` → `ruff format --check` → `mypy` → `pytest`
 - Coverage on by default via `pyproject.toml` (`pytest` always runs with `--cov`)
+
+## Package architecture
+
+Single package `vn_corrector` under `src/vn_corrector/`. No external runtime dependencies — zero runtime deps in `pyproject.toml`. All dev-only.
+
+Top-level modules: `cli.py`, `normalizer.py`, `tokenizer.py`, `case_mask.py`, `protected_tokens.py`. Stage packages live under `stage1_normalize/` through `stage6_decision/`.
+
+Tests mirror the source layout under `tests/` (e.g., `tests/stage4_candidates/`, `tests/stage5_scorer/`). Golden YAML regression suite at `tests/fixtures/stage4_candidates/golden_cases.yaml`.
 
 ## Coding rules
 
@@ -21,7 +30,7 @@ Read `PROJECT.md` before making changes. If your implementation conflicts with `
 - Prefer modifying existing modules over creating new ones.
 - **Use abstract base classes (ABC), never `Protocol`** — shared interfaces must inherit from `ABC` with `@abstractmethod`. No `from typing import Protocol`.
 - **No `Any` or `object` as type annotations** — use concrete types, generic types (`list[str]`, `dict[str, int]`), or union types (`str | int`). Sentinels (`_SENTINEL = object()`) are the only exception.
-- **No `# type: ignore` or `# noqa` suppression comments** — fix the underlying type or lint issue instead.
+- **No `# type: ignore` or `# noqa` suppression comments** — fix the underlying type or lint issue instead. (Existing violations in `json_store.py` and `cli.py` are accepted tech debt; new code must not add more.)
 
 ### Shared module locations
 
@@ -68,6 +77,14 @@ and ``stage2_lexicon.core.normalize`` for migration. New code **must not** use t
 - Do not remove error handling or validation unless explicitly required.
 - Keep diffs small and reviewable.
 
+## Resources and data
+
+- **Lexicons**: `resources/lexicons/` — 9 JSON files (syllables, words, phrases, units, abbreviations, ocr_confusions, foreign_words, chemicals, lexicon_package)
+- **N-grams**: `resources/ngrams/ngram_store.vi.json` — bigrams and trigrams with confidence scores
+- **Build scripts**: `scripts/` includes `build_lexicon_db.py`, `build_trusted_lexicon.py`, `build_ngram_store.py`, `download_lexicon_sources.py`
+- `scripts/build_lexicon_db.py` and `scripts/build_trusted_lexicon.py` are excluded from mypy (see `pyproject.toml` overrides)
+- Generated artifacts `resources/lexicons/lexicon_package.json` and `resources/lexicon/trusted_words.vi.jsonl` are gitignored
+
 ## Testing rules
 
 Every behavior change must include tests.
@@ -102,7 +119,7 @@ Before final response, summarize:
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **vi-clean-text-normalizer** (1606 symbols, 2635 relationships, 31 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **vi-clean-text-normalizer** (3781 symbols, 6423 relationships, 64 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

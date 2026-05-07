@@ -5,7 +5,8 @@ Whitespace, punctuation, and newlines are preserved verbatim so the
 original text can always be reconstructed.
 """
 
-from vn_corrector.common.types import TextSpan, Token, TokenType
+from vn_corrector.common.enums import TokenType
+from vn_corrector.common.spans import TextSpan, Token
 from vn_corrector.utils.unicode import contains_vietnamese
 
 

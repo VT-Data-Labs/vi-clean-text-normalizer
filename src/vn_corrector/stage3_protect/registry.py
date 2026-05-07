@@ -16,7 +16,7 @@ from typing import Any
 
 import yaml
 
-from vn_corrector.common.types import SpanType
+from vn_corrector.common.enums import SpanType
 from vn_corrector.stage3_protect.matchers.base import Matcher
 from vn_corrector.stage3_protect.matchers.lexicon import LexiconMatcher
 from vn_corrector.stage3_protect.matchers.regex import RegexMatcher

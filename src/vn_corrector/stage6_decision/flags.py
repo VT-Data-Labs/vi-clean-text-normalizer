@@ -1,17 +1,10 @@
 from __future__ import annotations
 
-from vn_corrector.common.types import (
-    Candidate,
-    CandidateSource,
-    CorrectionFlag,
-    FlagType,
-    TextSpan,
-)
-from vn_corrector.stage6_decision.types import (
-    CorrectionDecision,
-    DecisionReason,
-    DecisionType,
-)
+from vn_corrector.common.correction import CorrectionDecision, CorrectionFlag
+from vn_corrector.common.enums import CandidateIndexSource, DecisionType, FlagType
+from vn_corrector.common.spans import TextSpan
+from vn_corrector.lexicon.types import LexiconCandidate
+from vn_corrector.stage6_decision.types import DecisionReason
 
 
 def decision_to_flag(
@@ -32,13 +25,13 @@ def decision_to_flag(
         return None
 
     flag_type = _reason_to_flag_type(decision.reason)
-    candidates: tuple[Candidate, ...] = ()
+    candidates: tuple[LexiconCandidate, ...] = ()
     if decision.best is not None:
         candidates = (
-            Candidate(
+            LexiconCandidate(
                 text=decision.best,
                 score=decision.best_score,
-                source=CandidateSource.NO_TONE_INDEX,
+                source=CandidateIndexSource.NO_TONE_INDEX,
                 reason=decision.reason,
             ),
         )

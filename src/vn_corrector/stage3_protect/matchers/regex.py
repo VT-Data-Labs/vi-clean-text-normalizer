@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from re import compile as re_compile
 
-from vn_corrector.common.types import Span, SpanType
+from vn_corrector.common.enums import SpanType
+from vn_corrector.common.spans import ProtectedSpan
 from vn_corrector.stage3_protect.matchers.base import Matcher
 
 
@@ -52,17 +53,17 @@ class RegexMatcher(Matcher):
             joined = "|".join(f"(?:{p})" for p in patterns)
             self._regex = re_compile(joined)
 
-    def find(self, text: str) -> list[Span]:
+    def find(self, text: str) -> list[ProtectedSpan]:
         if self._regex is None:
             return []
 
-        spans: list[Span] = []
+        spans: list[ProtectedSpan] = []
         for m in self._regex.finditer(text):
             val = m.group()
             if self.require_ascii and not _is_ascii_only(val):
                 continue
             spans.append(
-                Span(
+                ProtectedSpan(
                     type=self.span_type,
                     start=m.start(),
                     end=m.end(),

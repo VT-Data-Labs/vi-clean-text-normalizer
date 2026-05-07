@@ -1,10 +1,7 @@
 """Tests for M6 flag builder — decision_to_flag."""
 
-from vn_corrector.common.types import (
-    CorrectionDecision,
-    DecisionType,
-    FlagType,
-)
+from vn_corrector.common.correction import CorrectionDecision
+from vn_corrector.common.enums import DecisionType, FlagType
 from vn_corrector.stage6_decision.flags import decision_to_flag
 
 

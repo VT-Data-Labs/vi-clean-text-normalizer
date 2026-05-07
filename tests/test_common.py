@@ -6,20 +6,14 @@ from vn_corrector.common.constants import (
     REPLACE_THRESHOLD,
     UNICODE_NORMALIZATION_FORM,
 )
-from vn_corrector.common.types import (
-    CaseMask,
-    CasePattern,
-    ChangeReason,
+from vn_corrector.common.correction import (
     CorrectionChange,
     CorrectionDecision,
     CorrectionFlag,
     CorrectionResult,
-    DecisionType,
-    FlagType,
-    TextSpan,
-    Token,
-    TokenType,
 )
+from vn_corrector.common.enums import CasePattern, ChangeReason, DecisionType, FlagType, TokenType
+from vn_corrector.common.spans import CaseMask, TextSpan, Token
 from vn_corrector.common.validation import is_nonempty_string, is_probability
 
 

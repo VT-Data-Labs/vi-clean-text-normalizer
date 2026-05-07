@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 
 from scripts.build_lexicon_db import _populate_from_json
-from vn_corrector.common.types import (
+from vn_corrector.lexicon.types import (
     AbbreviationEntry,
     LexiconEntry,
     LexiconLookupResult,

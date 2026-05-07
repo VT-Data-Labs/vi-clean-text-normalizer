@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from vn_corrector.common.types import ChangeReason, CorrectionChange, TextSpan
-from vn_corrector.stage6_decision.types import (
-    CorrectionDecision,
-    DecisionReason,
-    DecisionType,
-)
+from vn_corrector.common.correction import CorrectionChange, CorrectionDecision
+from vn_corrector.common.enums import ChangeReason, DecisionType
+from vn_corrector.common.spans import TextSpan
+from vn_corrector.stage6_decision.types import DecisionReason
 
 
 def decision_to_change(

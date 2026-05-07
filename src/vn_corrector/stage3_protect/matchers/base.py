@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from vn_corrector.common.types import Span
+from vn_corrector.common.spans import ProtectedSpan
 
 
 class Matcher(ABC):
@@ -20,5 +20,5 @@ class Matcher(ABC):
     priority: int = 0
 
     @abstractmethod
-    def find(self, text: str) -> list[Span]:
+    def find(self, text: str) -> list[ProtectedSpan]:
         """Return all detected spans of this type in *text*."""

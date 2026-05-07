@@ -30,11 +30,11 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from vn_corrector.common.types import (
+from vn_corrector.common.enums import LexiconSource
+from vn_corrector.lexicon.types import (
     AbbreviationEntry,
     LexiconEntry,
     LexiconRecord,
-    LexiconSource,
     OcrConfusionEntry,
     PhraseEntry,
     Provenance,

@@ -1,6 +1,8 @@
 """Tests for :class:`~vn_corrector.stage2_lexicon.core.types.LexiconIndex`."""
 
-from vn_corrector.common.types import LexiconEntry, LexiconKind, Provenance, Score
+from vn_corrector.common.enums import LexiconKind
+from vn_corrector.common.scoring import Score
+from vn_corrector.lexicon.types import LexiconEntry, Provenance
 from vn_corrector.stage2_lexicon.core.types import LexiconIndex
 
 

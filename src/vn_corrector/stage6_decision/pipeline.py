@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from vn_corrector.stage5_scorer.types import ScoredWindow
+from vn_corrector.common.contracts import ScoredWindow
+from vn_corrector.common.correction import CorrectionChange, CorrectionDecision, CorrectionFlag
 from vn_corrector.stage6_decision.changes import decision_to_change
 from vn_corrector.stage6_decision.config import DecisionEngineConfig
 from vn_corrector.stage6_decision.decision import DecisionEngine
 from vn_corrector.stage6_decision.flags import decision_to_flag
-from vn_corrector.stage6_decision.types import (
-    CorrectionChange,
-    CorrectionDecision,
-    CorrectionFlag,
-)
 
 
 def decide_scored_window(

@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from vn_corrector.common.types import CandidateSource as CommonCandidateSource
-from vn_corrector.stage5_scorer.types import ScoredSequence, ScoredWindow
+from vn_corrector.common.contracts import ScoredSequence, ScoredWindow
+from vn_corrector.common.correction import CorrectionDecision
+from vn_corrector.common.enums import CandidateIndexSource, DecisionType
 from vn_corrector.stage6_decision.config import DecisionEngineConfig
-from vn_corrector.stage6_decision.types import (
-    CorrectionDecision,
-    DecisionReason,
-    DecisionType,
-)
+from vn_corrector.stage6_decision.types import DecisionReason
 
 
 class DecisionEngine:
@@ -85,7 +82,7 @@ class DecisionEngine:
         second_best: str | None = None,
         second_score: float = 0.0,
         protected: bool = False,
-        candidate_sources: tuple[CommonCandidateSource, ...] = (),
+        candidate_sources: tuple[CandidateIndexSource, ...] = (),
     ) -> CorrectionDecision:
         if best is None:
             return CorrectionDecision(
@@ -201,17 +198,17 @@ def _find_second_best_for_position(
 
 def _collect_sources(
     token_candidates: object,
-) -> tuple[CommonCandidateSource, ...]:
-    sources: set[CommonCandidateSource] = set()
-    _map: dict[str, CommonCandidateSource] = {
-        "original": CommonCandidateSource.SURFACE_INDEX,
-        "ocr_confusion": CommonCandidateSource.OCR_CONFUSION_INDEX,
-        "syllable_map": CommonCandidateSource.NO_TONE_INDEX,
-        "word_lexicon": CommonCandidateSource.SURFACE_INDEX,
-        "abbreviation": CommonCandidateSource.ABBREVIATION_INDEX,
-        "phrase_specific": CommonCandidateSource.PHRASE_INDEX,
-        "domain_specific": CommonCandidateSource.PHRASE_INDEX,
-        "edit_distance": CommonCandidateSource.RULE,
+) -> tuple[CandidateIndexSource, ...]:
+    sources: set[CandidateIndexSource] = set()
+    _map: dict[str, CandidateIndexSource] = {
+        "original": CandidateIndexSource.SURFACE_INDEX,
+        "ocr_confusion": CandidateIndexSource.OCR_CONFUSION_INDEX,
+        "syllable_map": CandidateIndexSource.NO_TONE_INDEX,
+        "word_lexicon": CandidateIndexSource.SURFACE_INDEX,
+        "abbreviation": CandidateIndexSource.ABBREVIATION_INDEX,
+        "phrase_specific": CandidateIndexSource.PHRASE_INDEX,
+        "domain_specific": CandidateIndexSource.PHRASE_INDEX,
+        "edit_distance": CandidateIndexSource.RULE,
     }
     candidates_list: list[object] = list(getattr(token_candidates, "candidates", []))
     for c in candidates_list:

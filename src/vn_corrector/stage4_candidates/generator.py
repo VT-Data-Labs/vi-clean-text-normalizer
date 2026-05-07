@@ -7,7 +7,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from vn_corrector.common.types import LexiconStoreInterface, Span, Token, TokenType
+from vn_corrector.common.enums import TokenType
+from vn_corrector.common.spans import ProtectedSpan, Token
+from vn_corrector.lexicon.interface import LexiconStoreInterface
 from vn_corrector.stage1_normalize import normalize_text, to_no_tone_key
 from vn_corrector.stage4_candidates.cache import TokenCache
 from vn_corrector.stage4_candidates.config import CandidateGeneratorConfig
@@ -120,7 +122,7 @@ class CandidateGenerator:
         self,
         tokens: Sequence[Token],
         index: int,
-        protected_spans: Sequence[Span] | None = None,
+        protected_spans: Sequence[ProtectedSpan] | None = None,
     ) -> TokenCandidates:
         if index < 0 or index >= len(tokens):
             raise IndexError(f"Token index {index} out of range (len={len(tokens)})")
@@ -167,7 +169,7 @@ class CandidateGenerator:
     def generate_document(
         self,
         tokens: Sequence[Token],
-        protected_spans: Sequence[Span] | None = None,
+        protected_spans: Sequence[ProtectedSpan] | None = None,
     ) -> CandidateDocument:
         token_candidates: list[TokenCandidates] = []
         stats = CandidateGenerationStats()
@@ -343,7 +345,7 @@ class CandidateGenerator:
     def _is_protected_token(
         self,
         token: Token,
-        protected_spans: Sequence[Span] | None = None,
+        protected_spans: Sequence[ProtectedSpan] | None = None,
     ) -> bool:
         """Check if *token* is protected by M3 or the lexicon."""
         if token.protected:
