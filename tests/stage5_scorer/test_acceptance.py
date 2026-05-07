@@ -23,7 +23,7 @@ from vn_corrector.stage5_scorer.weights import ScoringWeights
 from vn_corrector.stage5_scorer.windowing import build_windows
 
 HERE = Path(__file__).resolve().parent
-NG_STORE = str(HERE / ".." / ".." / "resources" / "ngrams" / "ngram_store.vi.json")
+NG_STORE = str(HERE / ".." / ".." / "data" / "processed" / "ngram_store.vi.json")
 
 
 class FakeLexicon(LexiconStoreInterface):

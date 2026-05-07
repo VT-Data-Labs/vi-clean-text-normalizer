@@ -27,7 +27,7 @@ from vn_corrector.stage2_lexicon.core.normalize import normalize_key
 from vn_corrector.stage2_lexicon.core.types import LexiconIndex
 
 if TYPE_CHECKING:
-    from vn_corrector.stage2_lexicon.backends.json_store import JsonLexiconStore
+    from vn_corrector.stage2_lexicon.backends.data_store import LexiconDataStore
 
 
 # ---------------------------------------------------------------------------
@@ -38,9 +38,8 @@ if TYPE_CHECKING:
 class LexiconStore(LexiconStoreInterface, ABC):
     """Enhanced abstract interface for a Vietnamese lexicon store.
 
-    All backends (:class:`~vn_corrector.stage2_lexicon.backends.json_store.JsonLexiconStore`,
-    :class:`~vn_corrector.stage2_lexicon.backends.sqlite_store.SqliteLexiconStore`)
-    must implement this interface.
+    The production backend is
+    :class:`~vn_corrector.stage2_lexicon.backends.data_store.LexiconDataStore`.
 
     Every lookup **must** use :func:`normalize_key` for accent-insensitive
     matching to guarantee deterministic behaviour.
@@ -189,19 +188,19 @@ class LexiconStore(LexiconStoreInterface, ABC):
     # -- Convenience constructors -----------------------------------------
 
     @classmethod
-    def load_default(cls) -> JsonLexiconStore:
+    def load_default(cls) -> LexiconDataStore:
         """Load all built-in JSON resources and return a store.
 
         This is a concrete convenience method so that consumers can write
         ``LexiconStore.load_default()`` without importing a specific backend.
 
         .. deprecated::
-            Use ``load_default_lexicon("json")`` or ``load_default_lexicon("sqlite")``
+            Use ``load_default_lexicon("json")`` or ``load_default_lexicon("hybrid")``
             for explicit backend selection.
         """
-        from vn_corrector.stage2_lexicon.backends.json_store import JsonLexiconStore
+        from vn_corrector.stage2_lexicon.backends.data_store import LexiconDataStore
 
-        return JsonLexiconStore.from_resources()
+        return LexiconDataStore.from_json()
 
 
 __all__ = [

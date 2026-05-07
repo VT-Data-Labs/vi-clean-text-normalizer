@@ -15,23 +15,22 @@ from scripts.build_lexicon_db import (
     _populate_from_json,
     _populate_trusted_jsonl,
 )
-from vn_corrector.stage2_lexicon import JsonLexiconStore, LexiconStore
-from vn_corrector.stage2_lexicon.backends.sqlite_store import _SCHEMA_SQL, SqliteLexiconStore
+from vn_corrector.stage2_lexicon import LexiconDataStore, LexiconStore
+from vn_corrector.stage2_lexicon.backends import _SCHEMA_SQL
 
 
-def _build_test_db(db_path: str | Path) -> SqliteLexiconStore:
+def _build_test_db(db_path: str | Path) -> None:
     """Build a test SQLite DB from built-in JSON resources."""
     conn = sqlite3.connect(str(db_path))
     conn.executescript(_SCHEMA_SQL)
     _populate_from_json(conn, Path("resources/lexicons"))
     conn.commit()
     conn.close()
-    return SqliteLexiconStore.from_db(db_path)
 
 
-class TestJsonLexiconStoreNewMethods:
+class TestLexiconDataStoreNewMethods:
     def setup_method(self) -> None:
-        self.store = JsonLexiconStore.from_resources()
+        self.store = LexiconDataStore.from_json()
 
     # -- is_protected_token -----------------------------------------------
 
@@ -161,18 +160,18 @@ class TestJsonLexiconStoreNewMethods:
 
     def test_load_default_classmethod(self):
         store = LexiconStore.load_default()
-        assert isinstance(store, JsonLexiconStore)
+        assert isinstance(store, LexiconDataStore)
         assert store.contains_syllable("muỗng")
 
 
-class TestSqliteLexiconStoreNewMethods:
+class TestLexiconDataStoreFromSqlite:
     def setup_method(self) -> None:
         self._db_dir = tempfile.mkdtemp()
         self._db_path = os.path.join(self._db_dir, "test_lexicon.db")
-        self.store = _build_test_db(self._db_path)
+        _build_test_db(self._db_path)
+        self.store = LexiconDataStore.from_sqlite(Path(self._db_path))
 
     def teardown_method(self) -> None:
-        self.store.close()
         os.unlink(self._db_path)
         os.rmdir(self._db_dir)
 
@@ -203,8 +202,8 @@ class TestSqliteLexiconStoreNewMethods:
 class TestTrustedLexiconIntegration:
     """Tests that trusted words compile into SQLite with normal lookup behavior.
 
-    Trusted words are NOT loaded into JSON store — they are compiled into
-    the SQLite DB and accessed via ``SqliteLexiconStore`` or ``HybridLexiconStore``.
+    Trusted words are NOT loaded into the JSON store — they are compiled into
+    the SQLite DB and loaded into ``LexiconDataStore`` via ``load_sqlite()``.
     """
 
     def setup_method(self) -> None:
@@ -245,10 +244,9 @@ class TestTrustedLexiconIntegration:
         conn.commit()
         conn.close()
 
-        self.store = SqliteLexiconStore.from_db(self._db_path)
+        self.store = LexiconDataStore.from_sqlite(Path(self._db_path))
 
     def teardown_method(self) -> None:
-        self.store.close()
         os.unlink(self._jsonl_path)
         os.unlink(self._db_path)
         os.rmdir(self._db_dir)
@@ -277,10 +275,10 @@ class TestTrustedLexiconIntegration:
         assert self.store.contains_word("trường học")
 
     def test_json_store_does_not_have_trusted_words(self):
-        """JsonLexiconStore should NOT contain trusted words."""
-        json_store = JsonLexiconStore.from_resources()
+        """LexiconDataStore.from_json() should NOT contain trusted words."""
+        json_store = LexiconDataStore.from_json()
         assert not json_store.contains_word("trường học"), (
-            "Trusted words should NOT be in JSON store"
+            "Trusted words should NOT be in JSON-only store"
         )
 
 
@@ -291,10 +289,10 @@ class TestTrustedLexiconIntegration:
 
 class TestLoadDefaultLexiconFactory:
     def test_json_mode(self):
-        from vn_corrector.stage2_lexicon import load_default_lexicon
+        from vn_corrector.stage2_lexicon import LexiconDataStore, load_default_lexicon
 
         store = load_default_lexicon("json")
-        assert isinstance(store, JsonLexiconStore)
+        assert isinstance(store, LexiconDataStore)
         assert store.contains_syllable("muỗng")
 
     def test_sqlite_mode_raises_when_db_missing(self):
@@ -306,12 +304,12 @@ class TestLoadDefaultLexiconFactory:
             load_default_lexicon("sqlite", db_path="/nonexistent/db.sqlite")
 
     def test_sqlite_mode_falls_back_to_json_when_requested(self):
-        from vn_corrector.stage2_lexicon import load_default_lexicon
+        from vn_corrector.stage2_lexicon import LexiconDataStore, load_default_lexicon
 
         store = load_default_lexicon(
             "sqlite", db_path="/nonexistent/db.sqlite", fallback_to_json=True
         )
-        assert isinstance(store, JsonLexiconStore)
+        assert isinstance(store, LexiconDataStore)
         assert store.contains_syllable("muỗng")
 
     def test_hybrid_mode_raises_when_db_missing(self):
@@ -323,47 +321,40 @@ class TestLoadDefaultLexiconFactory:
             load_default_lexicon("hybrid", db_path="/nonexistent/db.sqlite")
 
     def test_hybrid_mode_falls_back_when_requested(self):
-        from vn_corrector.stage2_lexicon import load_default_lexicon
+        from vn_corrector.stage2_lexicon import LexiconDataStore, load_default_lexicon
 
         store = load_default_lexicon(
             "hybrid", db_path="/nonexistent/db.sqlite", fallback_to_json=True
         )
-        from vn_corrector.stage2_lexicon import HybridLexiconStore
 
-        assert isinstance(store, HybridLexiconStore)
+        assert isinstance(store, LexiconDataStore)
         assert store.contains_syllable("muỗng")
 
     def test_sqlite_with_builtin_db(self):
-        from vn_corrector.stage2_lexicon import load_default_lexicon
+        from vn_corrector.stage2_lexicon import LexiconDataStore, load_default_lexicon
 
         db_dir = tempfile.mkdtemp()
         db_path = os.path.join(db_dir, "test_lexicon.db")
         try:
-            builtin = _build_test_db(db_path)
-
+            _build_test_db(db_path)
             store = load_default_lexicon("sqlite", db_path=db_path)
-            assert isinstance(store, SqliteLexiconStore)
+            assert isinstance(store, LexiconDataStore)
             assert store.contains_syllable("muỗng")
-            store.close()
-            builtin.close()
         finally:
             if os.path.exists(db_path):
                 os.unlink(db_path)
             os.rmdir(db_dir)
 
     def test_hybrid_with_builtin_db(self):
-        from vn_corrector.stage2_lexicon import HybridLexiconStore, load_default_lexicon
+        from vn_corrector.stage2_lexicon import LexiconDataStore, load_default_lexicon
 
         db_dir = tempfile.mkdtemp()
         db_path = os.path.join(db_dir, "test_lexicon.db")
         try:
-            builtin = _build_test_db(db_path)
-
+            _build_test_db(db_path)
             store = load_default_lexicon("hybrid", db_path=db_path)
-            assert isinstance(store, HybridLexiconStore)
+            assert isinstance(store, LexiconDataStore)
             assert store.contains_syllable("muỗng")
-            store.close()
-            builtin.close()
         finally:
             if os.path.exists(db_path):
                 os.unlink(db_path)

@@ -16,7 +16,7 @@ from typing import Any, Literal, cast
 from vn_corrector.common.correction import CorrectionResult
 from vn_corrector.pipeline import correct_text as pipeline_correct_text
 from vn_corrector.stage2_lexicon import LexiconStore, load_default_lexicon
-from vn_corrector.stage2_lexicon.backends.json_store import load_json_resource
+from vn_corrector.stage2_lexicon.backends.data_store import load_json_resource
 
 
 def _build_lexicon_parser(subparsers: Any) -> argparse.ArgumentParser:
@@ -125,7 +125,7 @@ def _lexicon_validate() -> None:
 def _run_lexicon(args: argparse.Namespace) -> None:
     from pathlib import Path
 
-    mode: str = getattr(args, "lexicon_mode", "json")
+    mode: str = getattr(args, "lexicon_mode", "hybrid")
     db_path = Path(args.lexicon_db) if getattr(args, "lexicon_db", None) else None
     store = load_default_lexicon(mode, db_path=db_path)  # type: ignore[arg-type]
 
@@ -169,7 +169,7 @@ def _run_candidates(args: argparse.Namespace) -> None:
     text = " ".join(args.text)
     mode: Literal["json", "sqlite", "hybrid"] = cast(
         Literal["json", "sqlite", "hybrid"],
-        getattr(args, "lexicon_mode", "json"),
+        getattr(args, "lexicon_mode", "hybrid"),
     )
     lexicon = load_default_lexicon(mode)
     gen = CandidateGenerator(lexicon)

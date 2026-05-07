@@ -25,7 +25,7 @@ import logging
 import sqlite3
 from pathlib import Path
 
-from vn_corrector.stage2_lexicon.backends.sqlite_store import _SCHEMA_SQL
+from vn_corrector.stage2_lexicon.backends import _SCHEMA_SQL
 from vn_corrector.stage2_lexicon.core.accent_stripper import strip_accents
 
 logging.basicConfig(
@@ -320,8 +320,21 @@ def _write_build_metadata(conn: sqlite3.Connection, metadata: dict[str, str]) ->
 
 
 def _count_table(conn: sqlite3.Connection, table: str) -> int:
-    """Return the row count for *table*."""
-    row = conn.execute(f"SELECT COUNT(*) AS cnt FROM {table}").fetchone()
+    """Return the row count for *table* (only known-safe table names)."""
+    table_map = {
+        "lexicon_syllables": "SELECT COUNT(*) AS cnt FROM lexicon_syllables",
+        "lexicon_words": "SELECT COUNT(*) AS cnt FROM lexicon_words",
+        "lexicon_units": "SELECT COUNT(*) AS cnt FROM lexicon_units",
+        "lexicon_abbreviations": "SELECT COUNT(*) AS cnt FROM lexicon_abbreviations",
+        "lexicon_foreign_words": "SELECT COUNT(*) AS cnt FROM lexicon_foreign_words",
+        "lexicon_phrases": "SELECT COUNT(*) AS cnt FROM lexicon_phrases",
+        "lexicon_ocr_confusions": "SELECT COUNT(*) AS cnt FROM lexicon_ocr_confusions",
+        "lexicon_build_metadata": "SELECT COUNT(*) AS cnt FROM lexicon_build_metadata",
+    }
+    sql = table_map.get(table)
+    if sql is None:
+        return 0
+    row = conn.execute(sql).fetchone()
     return row[0] if row else 0
 
 
@@ -406,8 +419,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--trusted-jsonl",
-        default="data/lexicon/trusted_words.jsonl",
-        help="Path to trusted-word JSONL (default: data/lexicon/trusted_words.jsonl)",
+        default="data/lexicon/trusted_words.vi.jsonl",
+        help="Path to trusted-word JSONL (default: data/lexicon/trusted_words.vi.jsonl)",
     )
     parser.add_argument(
         "--output",
@@ -418,6 +431,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main() -> None:
+    """Build the trusted lexicon DB from JSON resources and trusted JSONL."""
     args = parse_args()
     log.info("Starting lexicon DB build")
     build_lexicon_db(

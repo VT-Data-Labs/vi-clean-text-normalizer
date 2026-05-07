@@ -45,6 +45,16 @@ class FakeLexicon(LexiconStoreInterface):
         "nếu",
         "độ",
         "ấm",
+        "điện",
+        "thoại",
+        "thoái",
+        "diện",
+        "liên",
+        "liền",
+        "hệ",
+        "hè",
+        "chính",
+        "chủ",
     }
 
     def contains_word(self, text: str) -> bool:
@@ -92,10 +102,16 @@ class FakeNgramStore(JsonNgramStore):
             "số muỗng": 0.9,
             "muỗng gạt": 0.85,
             "gạt ngang": 0.8,
+            "điện thoại": 0.98,
+            "thoại liên": 0.85,
+            "liên hệ": 0.98,
+            "chính chủ": 0.95,
         }
         self._trigrams = {
             "số muỗng gạt": 0.9,
             "muỗng gạt ngang": 0.85,
+            "điện thoại liên": 0.85,
+            "thoại liên hệ": 0.85,
         }
         self._fourgrams = {"số muỗng gạt ngang": 0.9}
         self._domain_phrases = {
@@ -351,4 +367,54 @@ class TestPhraseScorer:
             f"Corrected (score={scores[corrected_seq]:.4f}) should outrank "
             f"identity (score={scores[identity_seq]:.4f})"
             " when edit_distance is set for diacritic-restored tokens"
+        )
+
+    def test_dien_thoai_lien_he_preferred(self, scorer: PhraseScorer) -> None:
+        """Accentless "dien thoai lien he" should prefer the correct
+        accent-restored sequence over unnatural alternatives.
+        """
+        tcs = [
+            _make_tc(
+                "dien",
+                [
+                    ("dien", True, 0, CandidateSource.ORIGINAL),
+                    ("điện", False, 1, CandidateSource.SYLLABLE_MAP),
+                    ("diện", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+            _make_tc(
+                "thoai",
+                [
+                    ("thoai", True, 0, CandidateSource.ORIGINAL),
+                    ("thoại", False, 1, CandidateSource.SYLLABLE_MAP),
+                    ("thoái", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+            _make_tc(
+                "lien",
+                [
+                    ("lien", True, 0, CandidateSource.ORIGINAL),
+                    ("liên", False, 1, CandidateSource.SYLLABLE_MAP),
+                    ("liền", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+            _make_tc(
+                "he",
+                [
+                    ("he", True, 0, CandidateSource.ORIGINAL),
+                    ("hệ", False, 1, CandidateSource.SYLLABLE_MAP),
+                    ("hè", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+        ]
+        windows = build_windows(tcs)
+        result = scorer.score_window(windows[0])
+        correct = "điện thoại liên hệ"
+        wrong = "diện thoái liền hệ"
+        scores = {" ".join(s.sequence.tokens): s.score for s in result.ranked_sequences}
+        assert correct in scores, f"Correct sequence not in scored: {list(scores.keys())}"
+        assert wrong in scores, f"Wrong sequence not in scored: {list(scores.keys())}"
+        assert scores[correct] > scores[wrong], (
+            f"Correct ({correct}: {scores[correct]:.4f}) should outrank "
+            f"wrong ({wrong}: {scores[wrong]:.4f})"
         )

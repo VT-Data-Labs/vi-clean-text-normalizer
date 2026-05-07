@@ -9,8 +9,7 @@
   {"phrase": "pha chế theo lượng", "normalized": "pha che theo luong", "n": 4, "freq": 0.78, "domain": "product_instruction"},
   {"phrase": "nước ở nhiệt độ", "normalized": "nuoc o nhiet do", "n": 3, "freq": 0.75, "domain": "general"},
   {"phrase": "sổ hồng riêng", "normalized": "so hong rieng", "n": 2, "freq": 0.80, "domain": "real_estate"},
-  {"phrase": "rót nước", "normalized": "rot nuoc", "n": 2, "freq": 0.85, "domain": "general"},
-  {"phrase": "làm nguội", "normalized": "lam nguoi", "n": 2, "freq": 0.82, "domain": "product_instruction"},
-  {"phrase": "theo lượng", "normalized": "theo luong", "n": 2, "freq": 0.75, "domain": "product_instruction"},
-  {"phrase": "nhà vệ sinh", "normalized": "nha ve sinh", "n": 3, "freq": 0.70, "domain": "real_estate"}
+  {"phrase": "nhà vệ sinh", "normalized": "nha ve sinh", "n": 3, "freq": 0.70, "domain": "real_estate"},
+  {"phrase": "căn hộ", "normalized": "can ho", "n": 2, "freq": 0.85, "domain": "real_estate"},
+  {"phrase": "bán căn hộ", "normalized": "ban can ho", "n": 3, "freq": 0.80, "domain": "real_estate"}
 ]

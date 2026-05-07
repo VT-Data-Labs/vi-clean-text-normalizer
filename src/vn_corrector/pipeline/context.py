@@ -15,7 +15,7 @@ from vn_corrector.stage6_decision import DecisionEngine, DecisionEngineConfig
 
 def _get_ngram_path() -> str:
     root = Path(__file__).resolve().parent.parent.parent.parent
-    ngram_file = root / "resources" / "ngrams" / "ngram_store.vi.json"
+    ngram_file = root / "data" / "processed" / "ngram_store.vi.json"
     return str(ngram_file)
 
 
@@ -66,7 +66,7 @@ def build_pipeline_context(config: PipelineConfig) -> PipelineContext:
     required resource is missing.
     """
     try:
-        lexicon: LexiconStoreInterface = load_default_lexicon("json")
+        lexicon: LexiconStoreInterface = load_default_lexicon("hybrid", fallback_to_json=True)
     except Exception as exc:
         raise PipelineDependencyError(f"Failed to load default lexicon: {exc}") from exc
 

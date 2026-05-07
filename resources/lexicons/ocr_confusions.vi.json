@@ -4,5 +4,7 @@
   {"noisy": "lâm", "corrections": ["làm"], "confidence": 0.75},
   {"noisy": "dủ", "corrections": ["đủ"], "confidence": 0.90},
   {"noisy": "đẫn", "corrections": ["dẫn", "dần"], "confidence": 0.70},
-  {"noisy": "người", "corrections": ["nguội"], "confidence": 0.65}
+  {"noisy": "người", "corrections": ["nguội"], "confidence": 0.65},
+  {"noisy": "can", "corrections": ["căn"], "confidence": 0.80},
+  {"noisy": "ho", "corrections": ["hộ"], "confidence": 0.80}
 ]
