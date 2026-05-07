@@ -39,7 +39,7 @@ from vn_corrector import correct_text
 
 result = correct_text("neu do am vua du")
 print(result.corrected_text)   # "nếu độ ấm vừa đủ"
-print(result.confidence)       # 0.84
+print(result.confidence)       # 1.0
 print(result.changes)          # [CorrectionChange(...), ...]
 ```
 
@@ -109,7 +109,7 @@ from vn_corrector import correct_text
 result = correct_text("neu do am vua du", domain="milk_instruction")
 result.original_text    # "neu do am vua du"
 result.corrected_text   # "nếu độ ấm vừa đủ"
-result.confidence       # 0.84
+result.confidence       # 1.0
 result.changes          # applied corrections
 result.flags            # warnings
 ```
