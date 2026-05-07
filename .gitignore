@@ -1,6 +1,7 @@
 .gitnexus
 .coverage
 coverage.xml
+*.cover
 __pycache__/
 *.py[cod]
 *$py.class
