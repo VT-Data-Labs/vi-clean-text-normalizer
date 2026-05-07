@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from vn_corrector.evaluation.types import EvaluationExample
+from vn_corrector.stage7_evaluation.types import EvaluationExample
 
 
 def load_jsonl(path: str | Path) -> list[EvaluationExample]:

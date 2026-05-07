@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from vn_corrector.evaluation.dataset import load_jsonl, parse_example
+from vn_corrector.stage7_evaluation.dataset import load_jsonl, parse_example
 
 
 def test_parse_example_minimal():

@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from vn_corrector.cli import correct_text
-from vn_corrector.evaluation.dataset import load_jsonl
-from vn_corrector.evaluation.runner import evaluate_examples
+from vn_corrector.stage7_evaluation.dataset import load_jsonl
+from vn_corrector.stage7_evaluation.runner import evaluate_examples
 
 _HERE = Path(__file__).resolve().parent
 _SMALL_DATASET = str(_HERE.parent.parent / "data" / "evaluation" / "gold.small.jsonl")

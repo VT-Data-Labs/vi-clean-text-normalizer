@@ -4,7 +4,7 @@ import json
 from dataclasses import asdict
 from typing import Any
 
-from vn_corrector.evaluation.types import EvaluationReport
+from vn_corrector.stage7_evaluation.types import EvaluationReport
 
 
 def format_report(report: EvaluationReport) -> str:

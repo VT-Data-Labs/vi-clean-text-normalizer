@@ -13,9 +13,9 @@ import argparse
 import sys
 
 from vn_corrector.common.correction import CorrectionResult
-from vn_corrector.evaluation.dataset import load_jsonl
-from vn_corrector.evaluation.report import format_report, report_to_json
-from vn_corrector.evaluation.runner import evaluate_examples
+from vn_corrector.stage7_evaluation.dataset import load_jsonl
+from vn_corrector.stage7_evaluation.report import format_report, report_to_json
+from vn_corrector.stage7_evaluation.runner import evaluate_examples
 
 
 def _correct_text(text: str, domain: str | None = None) -> CorrectionResult:

@@ -4,8 +4,8 @@ from collections.abc import Callable
 
 from vn_corrector.common.correction import CorrectionResult
 from vn_corrector.common.enums import DecisionType
-from vn_corrector.evaluation.metrics import cer, wer
-from vn_corrector.evaluation.types import (
+from vn_corrector.stage7_evaluation.metrics import cer, wer
+from vn_corrector.stage7_evaluation.types import (
     EvaluationExample,
     EvaluationReport,
     ExampleEvaluation,

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from vn_corrector.common.correction import CorrectionResult
-from vn_corrector.evaluation.runner import build_report, evaluate_one
-from vn_corrector.evaluation.types import EvaluationExample, ExampleEvaluation
+from vn_corrector.stage7_evaluation.runner import build_report, evaluate_one
+from vn_corrector.stage7_evaluation.types import EvaluationExample, ExampleEvaluation
 
 
 def _identity_correct(text: str, _domain: str | None = None) -> CorrectionResult:

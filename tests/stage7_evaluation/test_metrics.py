@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from vn_corrector.evaluation.metrics import cer, edit_distance, wer
+from vn_corrector.stage7_evaluation.metrics import cer, edit_distance, wer
 
 
 class TestEditDistance:
