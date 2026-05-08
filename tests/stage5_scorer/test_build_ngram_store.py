@@ -179,7 +179,7 @@ class TestLoadLexiconPhrasesJson:
     def test_loads_lexicon_file(self) -> None:
         path = REPO / "resources" / "lexicons" / "phrases.vi.json"
         records = load_lexicon_phrases_json(path)
-        assert len(records) == 13
+        assert len(records) == 22
         assert any("căn" in r.tokens for r in records)
         for r in records:
             assert r.source == "lexicon_json"

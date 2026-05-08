@@ -7,14 +7,25 @@ from functools import lru_cache
 from typing import Any
 
 from vn_corrector.common.correction import CorrectionChange, CorrectionFlag, CorrectionResult
-from vn_corrector.common.enums import FlagType
+from vn_corrector.common.enums import CandidateIndexSource, ChangeReason, FlagType
 from vn_corrector.common.spans import CaseMask, ProtectedSpan, TextSpan, Token
 from vn_corrector.pipeline.config import PipelineConfig
 from vn_corrector.pipeline.context import PipelineContext, build_pipeline_context
 from vn_corrector.pipeline.errors import PipelineInputTooLargeError
 from vn_corrector.pipeline.reconstruction import apply_changes, resolve_overlapping_changes
 from vn_corrector.stage4_candidates import CandidateGenerator
+from vn_corrector.stage4_candidates.phrase_span import PhraseSpanProposer
+from vn_corrector.stage4_candidates.word_island import (
+    WordIsland,
+    extract_word_islands,
+    reconstruct_phrase_replacement,
+)
 from vn_corrector.stage5_scorer import PhraseScorer
+from vn_corrector.stage5_scorer.lattice import (
+    LatticeDecoder,
+    LatticeEdge,
+    should_accept_phrase_decode,
+)
 from vn_corrector.stage5_scorer.windowing import build_windows
 from vn_corrector.stage6_decision import DecisionEngine, decide_scored_window
 
@@ -68,6 +79,53 @@ def _fix_span_to_character_offsets(
                 candidate_sources=change.candidate_sources,
             )
     return change
+
+
+def _build_identity_edges_for_island(island: WordIsland) -> list[LatticeEdge]:
+    edges: list[LatticeEdge] = []
+    for word_idx, token in enumerate(island.word_tokens):
+        raw_idx = island.raw_token_indexes[word_idx]
+        edges.append(
+            LatticeEdge(
+                start=word_idx,
+                end=word_idx + 1,
+                output_tokens=(token.text,),
+                score=0.0,
+                risk=0.0,
+                source="identity",
+                raw_start=raw_idx,
+                raw_end=raw_idx + 1,
+                char_start=token.span.start,
+                char_end=token.span.end,
+                explanation="identity",
+            )
+        )
+    return edges
+
+
+def _spans_overlap(a: TextSpan, b: TextSpan) -> bool:
+    return a.start < b.end and b.start < a.end
+
+
+def _span_covers(a: TextSpan, b: TextSpan) -> bool:
+    return a.start <= b.start and a.end >= b.end
+
+
+def _merge_phrase_changes(
+    accepted: list[CorrectionChange],
+    phrase_changes: list[CorrectionChange],
+) -> list[CorrectionChange]:
+    merged = list(accepted)
+    for phrase_change in phrase_changes:
+        overlaps = [c for c in merged if _spans_overlap(c.span, phrase_change.span)]
+        if not overlaps:
+            merged.append(phrase_change)
+            continue
+        if all(_span_covers(phrase_change.span, c.span) for c in overlaps):
+            merged = [c for c in merged if c not in overlaps]
+            merged.append(phrase_change)
+            continue
+    return sorted(merged, key=lambda c: c.span.start)
 
 
 class TextCorrector:
@@ -220,6 +278,74 @@ class TextCorrector:
         # --- Step 5: Generate candidates ---
         cand_doc = ctx.candidate_generator.generate_document(tokens, protected_spans)
 
+        # --- Step 5b: Phrase-span lattice restoration ---
+        phrase_changes: list[CorrectionChange] = []
+        if ctx.config.enable_phrase_span_restoration and ctx.lexicon is not None:
+            islands = extract_word_islands(tokens)
+            proposer = PhraseSpanProposer(
+                lexicon=ctx.lexicon,
+                min_len=ctx.config.phrase_span_min_len,
+                max_len=ctx.config.phrase_span_max_len,
+            )
+            for island in islands:
+                phrase_edges = proposer._propose_for_island(island)
+                if not phrase_edges:
+                    continue
+                all_edges = _build_identity_edges_for_island(island)
+                all_edges.extend(phrase_edges)
+                n_words = len(island.word_tokens)
+                decode_result = LatticeDecoder().decode(
+                    all_edges,
+                    n_words=n_words,
+                )
+                if not should_accept_phrase_decode(
+                    decode_result,
+                    ctx.config.phrase_span_accept_margin,
+                    ctx.config.phrase_span_risk_threshold,
+                ):
+                    continue
+
+                phrase_edges_in_path = [e for e in decode_result.edges if e.source == "phrase_span"]
+                if not phrase_edges_in_path:
+                    continue
+
+                covered_positions: set[int] = set()
+                for e in phrase_edges_in_path:
+                    for p in range(e.start, e.end):
+                        covered_positions.add(p)
+
+                # Require ALL tokens to be covered by phrase edges.
+                # If the decoder chose partial coverage (gaps), try the
+                # full-coverage phrase edge directly.
+                if len(covered_positions) != n_words:
+                    full_edges = [e for e in phrase_edges if e.start == 0 and e.end == n_words]
+                    if not full_edges:
+                        continue
+                    phrase_edges_in_path = full_edges[:1]
+
+                for edge in phrase_edges_in_path:
+                    if edge.raw_start is None or edge.raw_end is None:
+                        continue
+                    cs = edge.char_start
+                    ce = edge.char_end
+                    original_text = normalized[cs:ce] if cs is not None and ce is not None else ""
+                    replacement_text = reconstruct_phrase_replacement(
+                        tokens, edge.raw_start, edge.raw_end, edge.output_tokens
+                    )
+                    phrase_changes.append(
+                        CorrectionChange(
+                            original=original_text,
+                            replacement=replacement_text,
+                            span=TextSpan(
+                                start=edge.char_start or 0,
+                                end=edge.char_end or 0,
+                            ),
+                            confidence=min(1.0, edge.score / 5.5),
+                            reason=ChangeReason.PHRASE_CORRECTED,
+                            candidate_sources=(CandidateIndexSource.PHRASE_INDEX,),
+                        )
+                    )
+
         # --- Step 6: Build windows ---
         windows = build_windows(
             cand_doc.token_candidates,
@@ -261,6 +387,10 @@ class TextCorrector:
 
         # --- Step 9: Resolve overlapping changes ---
         accepted = resolve_overlapping_changes(all_changes)
+
+        # Merge phrase-span changes (they win over covered smaller changes)
+        if phrase_changes:
+            accepted = _merge_phrase_changes(accepted, phrase_changes)
 
         # --- Step 10: Reconstruct ---
         corrected = apply_changes(normalized, accepted)

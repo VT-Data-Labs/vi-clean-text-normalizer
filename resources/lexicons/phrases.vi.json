@@ -11,5 +11,14 @@
   {"phrase": "sổ hồng riêng", "normalized": "so hong rieng", "n": 2, "freq": 0.80, "domain": "real_estate"},
   {"phrase": "nhà vệ sinh", "normalized": "nha ve sinh", "n": 3, "freq": 0.70, "domain": "real_estate"},
   {"phrase": "căn hộ", "normalized": "can ho", "n": 2, "freq": 0.85, "domain": "real_estate"},
-  {"phrase": "bán căn hộ", "normalized": "ban can ho", "n": 3, "freq": 0.80, "domain": "real_estate"}
+  {"phrase": "bán căn hộ", "normalized": "ban can ho", "n": 3, "freq": 0.80, "domain": "real_estate"},
+  {"phrase": "vậy thì", "normalized": "vay thi", "n": 2, "freq": 0.98, "domain": "general"},
+  {"phrase": "thì giờ", "normalized": "thi gio", "n": 2, "freq": 0.95, "domain": "general"},
+  {"phrase": "làm thế nào", "normalized": "lam the nao", "n": 3, "freq": 0.98, "domain": "general"},
+  {"phrase": "vậy thì giờ phải làm thế nào", "normalized": "vay thi gio phai lam the nao", "n": 7, "freq": 0.99, "domain": "general"},
+  {"phrase": "mối quan hệ", "normalized": "moi quan he", "n": 3, "freq": 0.99, "domain": "general"},
+  {"phrase": "quan hệ", "normalized": "quan he", "n": 2, "freq": 0.98, "domain": "general"},
+  {"phrase": "không biết làm sao", "normalized": "khong biet lam sao", "n": 4, "freq": 0.98, "domain": "general"},
+  {"phrase": "có gì đâu", "normalized": "co gi dau", "n": 3, "freq": 0.98, "domain": "general"},
+  {"phrase": "ma túy", "normalized": "ma tuy", "n": 2, "freq": 0.97, "domain": "general"}
 ]

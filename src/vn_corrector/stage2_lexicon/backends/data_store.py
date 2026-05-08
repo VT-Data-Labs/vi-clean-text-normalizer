@@ -86,6 +86,7 @@ class LexiconDataStore(LexiconStore):
         self._word_index: dict[str, list[LexiconEntry]] = {}
         self._word_by_surface: dict[str, list[LexiconEntry]] = {}
         self._phrase_index: dict[str, list[PhraseEntry]] = {}
+        self._notone_phrase_index: dict[str, list[PhraseEntry]] = {}
         self._ocr_confusion_entries: dict[str, OcrConfusionEntry] = {}
 
         # -- Formal LexiconIndex (derived on demand) ---------------------------
@@ -331,6 +332,7 @@ class LexiconDataStore(LexiconStore):
             self._phrase_data.append(phrase_entry)
             self._phrase_index.setdefault(no_tone, []).append(phrase_entry)
             self._phrase_surfaces.setdefault(phrase, []).append(phrase_entry)
+            self._notone_phrase_index.setdefault(no_tone, []).append(phrase_entry)
             seen_ids.add(eid)
 
         # -- OCR confusions ----------------------------------------------------
@@ -520,6 +522,7 @@ class LexiconDataStore(LexiconStore):
             self._phrase_data.append(phrase_entry)
             self._phrase_index.setdefault(no_tone, []).append(phrase_entry)
             self._phrase_surfaces.setdefault(phrase, []).append(phrase_entry)
+            self._notone_phrase_index.setdefault(no_tone, []).append(phrase_entry)
 
     def _load_ocr_confusions(self) -> None:
         data: list[dict[str, object]] = load_json_resource("ocr_confusions.vi.json")
@@ -638,6 +641,10 @@ class LexiconDataStore(LexiconStore):
     def lookup_phrase_normalized(self, text: str) -> list[PhraseEntry]:
         key = strip_accents(text)
         return list(self._phrase_index.get(key, []))
+
+    def lookup_phrase_notone(self, no_tone_key: str) -> list[PhraseEntry]:
+        key = no_tone_key.strip().lower()
+        return list(self._notone_phrase_index.get(key, []))
 
     def get_syllable_candidates(self, no_tone_key: str) -> list[LexiconEntry]:
         return list(self._syllable_index.get(no_tone_key, []))

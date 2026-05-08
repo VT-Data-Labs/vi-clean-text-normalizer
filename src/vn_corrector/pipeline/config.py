@@ -48,6 +48,12 @@ class PipelineConfig:
     min_margin: float = 0.08
     preserve_unknown_tokens: bool = True
     enable_phrase_scoring: bool = True
+    enable_phrase_span_restoration: bool = True
+    phrase_span_min_len: int = 2
+    phrase_span_max_len: int = 8
+    phrase_span_accept_margin: float = 2.0
+    phrase_span_risk_threshold: float = 0.5
+    phrase_span_preserve_spacing: bool = True
     enable_diagnostics: bool = False
     fail_closed: bool = True
     max_input_chars: int = 20_000

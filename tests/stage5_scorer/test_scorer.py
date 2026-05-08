@@ -110,6 +110,9 @@ class FakeLexicon(LexiconStoreInterface):
     def lookup_phrase_normalized(self, _text: str) -> list[Any]:
         return []
 
+    def lookup_phrase_notone(self, _no_tone_key: str) -> list[Any]:
+        return []
+
     def lookup_ocr(self, _text: str) -> list[str]:
         return []
 

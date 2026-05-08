@@ -10,6 +10,7 @@ from vn_corrector.common.lexicon import (
     LexiconStoreInterface,
     OcrConfusionLookupResult,
 )
+from vn_corrector.pipeline.corrector import correct_text
 from vn_corrector.stage4_candidates.types import (
     Candidate,
     CandidateEvidence,
@@ -78,6 +79,9 @@ class FakeLexicon(LexiconStoreInterface):
         return None
 
     def lookup_phrase_normalized(self, _text: str) -> list[Any]:
+        return []
+
+    def lookup_phrase_notone(self, _no_tone_key: str) -> list[Any]:
         return []
 
     def lookup_ocr(self, _text: str) -> list[str]:
@@ -285,3 +289,57 @@ class TestAcceptance:
         for s in result.ranked_sequences:
             scores[" ".join(s.sequence.tokens)] = s.score
         assert scores.get("số muỗng gạt ngang", -999.0) > scores.get("số mường gạt ngang", -999.0)
+
+
+# ---------------------------------------------------------------------------
+# M6.1 — Phrase-span lattice decoder acceptance tests
+# ---------------------------------------------------------------------------
+
+
+class TestPhraseSpanAcceptance:
+    """Acceptance tests for the phrase-span lattice restoration (M6.1)."""
+
+    def test_phrase_span_restores_vay_thi_gio_phai_lam_the_nao(self) -> None:
+        result = correct_text("vay thi gio phai lam the nao ???")
+        assert result.corrected_text == "vậy thì giờ phải làm thế nào ???"
+
+    def test_phrase_span_restores_moi_quan_he(self) -> None:
+        result = correct_text("moi quan he")
+        assert result.corrected_text == "mối quan hệ"
+
+    def test_phrase_span_restores_quan_he(self) -> None:
+        result = correct_text("quan he")
+        assert result.corrected_text == "quan hệ"
+
+    def test_phrase_span_restores_lam_the_nao(self) -> None:
+        result = correct_text("lam the nao")
+        assert result.corrected_text == "làm thế nào"
+
+    def test_phrase_span_restores_khong_biet_lam_sao(self) -> None:
+        result = correct_text("khong biet lam sao")
+        assert result.corrected_text == "không biết làm sao"
+
+    def test_phrase_span_restores_co_gi_dau(self) -> None:
+        result = correct_text("co gi dau")
+        assert result.corrected_text == "có gì đâu"
+
+    def test_phrase_span_restores_ma_tuy(self) -> None:
+        result = correct_text("ma tuy")
+        assert "ma " in result.corrected_text.lower()
+        assert result.corrected_text.lower().strip() != "ma"
+
+    def test_phrase_span_does_not_restore_single_ambiguous_ma(self) -> None:
+        result = correct_text("ma")
+        assert result.corrected_text == "ma"
+
+    def test_phrase_span_does_not_corrupt_iphone(self) -> None:
+        result = correct_text("iphone")
+        assert "iphone" in result.corrected_text.lower()
+
+    def test_phrase_span_does_not_corrupt_facebook(self) -> None:
+        result = correct_text("facebook ban hang")
+        assert "facebook" in result.corrected_text.lower()
+
+    def test_phrase_span_preserves_internal_spacing(self) -> None:
+        result = correct_text("vay   thi")
+        assert result.corrected_text == "vậy   thì"
