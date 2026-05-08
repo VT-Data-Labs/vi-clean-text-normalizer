@@ -60,9 +60,9 @@ def rank_candidates(
 
 def _sort_key(
     item: tuple[float, Candidate],
-) -> tuple[float, int, str]:
+) -> tuple[float, float, int, str]:
     score, candidate = item
-    return (score, 1 if candidate.is_original else 0, candidate.text)
+    return (score, candidate.lexicon_freq, len(candidate.evidence), candidate.text)
 
 
 __all__ = ["compute_prior_score", "rank_candidates"]

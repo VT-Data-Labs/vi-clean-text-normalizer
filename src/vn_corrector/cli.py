@@ -98,7 +98,6 @@ def _lexicon_validate() -> None:
     from vn_corrector.common.validation import validate_lexicon_file
 
     resources: list[tuple[str, str]] = [
-        ("syllables.vi.json", "syllable"),
         ("words.vi.json", "word"),
         ("units.vi.json", "unit"),
         ("abbreviations.vi.json", "abbreviation"),

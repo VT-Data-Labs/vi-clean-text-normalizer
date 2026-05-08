@@ -117,8 +117,9 @@ class LexiconDataStore(LexiconStore):
         Currently uses the default resource directory
         (``resources/lexicons/``).  The *resources_dir* parameter is
         reserved for future use.
+
+        Note: syllables are loaded from the SQLite build, not from JSON.
         """
-        self._load_syllables()
         self._load_words()
         self._load_units()
         self._load_abbreviations()
@@ -155,9 +156,10 @@ class LexiconDataStore(LexiconStore):
 
         # -- Syllables ---------------------------------------------------------
         for row in conn.execute(
-            "SELECT base, surface, freq FROM lexicon_syllables ORDER BY base, surface"
+            "SELECT base, surface, freq, freq_count, freq_no_tone "
+            "FROM lexicon_syllables ORDER BY base, surface"
         ):
-            base, surface, freq = row
+            base, surface, freq, _freq_count, _freq_no_tone = row
             eid = f"syllable/{surface}"
             if eid in seen_ids:
                 continue

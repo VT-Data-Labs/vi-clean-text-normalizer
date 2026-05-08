@@ -25,7 +25,7 @@ def _load_cases() -> list[dict[str, object]]:
 
 @pytest.fixture(scope="session")
 def golden_gen() -> CandidateGenerator:
-    lexicon = load_default_lexicon(mode="json")
+    lexicon = load_default_lexicon(mode="hybrid")
     return CandidateGenerator(lexicon)
 
 

@@ -42,7 +42,7 @@ class PipelineConfig:
     normalize: bool = True
     protect_tokens: bool = True
     enable_case_masking: bool = True
-    max_candidates_per_token: int = 8
+    max_candidates_per_token: int = 32
     max_window_size: int = 5
     min_accept_confidence: float = 0.72
     min_margin: float = 0.08

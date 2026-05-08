@@ -654,3 +654,18 @@ class TestTokenValidation:
     def test_invalid_span(self) -> None:
         with pytest.raises(ValueError):
             Token(text="x", token_type=TokenType.VI_WORD, span=TextSpan(5, 3)).validate()
+
+
+# =========================================================================
+# End-to-end correction tests
+# =========================================================================
+
+
+class TestEndToEndCorrection:
+    """Regression tests for common real-world inputs."""
+
+    def test_vui_long_lien_he_hotline(self) -> None:
+        result = correct_text("vui long lien he hotline")
+        assert result.corrected_text == "vui lòng liên hệ hotline", (
+            f"Expected 'vui lòng liên hệ hotline', got {result.corrected_text!r}"
+        )

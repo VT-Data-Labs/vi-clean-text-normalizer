@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sqlite3
 from pathlib import Path
 
@@ -41,30 +42,59 @@ log = logging.getLogger("build_trusted_lexicon_db")
 # ---------------------------------------------------------------------------
 
 
-def _populate_syllables(conn: sqlite3.Connection, resources_dir: Path) -> None:
-    raw_path = resources_dir / "syllables.vi.json"
-    data: list[dict[str, object]] = json.loads(raw_path.read_text(encoding="utf-8"))
-    conn.executemany(
-        "INSERT OR IGNORE INTO lexicon_syllables (base, surface, freq) VALUES (?, ?, ?)",
-        _yield_syllable_rows(data),
+def _populate_syllables(
+    conn: sqlite3.Connection,
+    trusted_jsonl: Path,
+) -> None:
+    """Populate lexicon_syllables from every token in the trusted corpus.
+
+    Every unique token from every word and phrase in the trusted JSONL
+    becomes a syllable entry.  ``freq`` is the normalised percentage
+    within its no-tone group (sum = 1.0), ``freq_count`` the raw token
+    count, and ``freq_no_tone`` the total count for the no-tone key.
+    """
+    # Vietnamese word pattern: letters (including accented), hyphens, and internal spaces
+    _word_re = re.compile(
+        r"^[a-zA-Zàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệđìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ\-]+$"
     )
 
+    counter: dict[str, int] = {}
+    with trusted_jsonl.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            surface = entry.get("surface", "")
+            if not surface:
+                continue
+            for token in surface.split():
+                token = token.strip()
+                if not _word_re.match(token):
+                    continue
+                lower = token.lower()
+                counter[lower] = counter.get(lower, 0) + 1
 
-def _yield_syllable_rows(
-    data: list[dict[str, object]],
-) -> list[tuple[str, str, float]]:
-    rows: list[tuple[str, str, float]] = []
-    for entry in data:
-        base = str(entry["base"])
-        raw_forms = entry["forms"]
-        forms: list[str] = [str(f) for f in raw_forms] if isinstance(raw_forms, list) else []
-        freq_map: dict[str, float] = {}
-        raw_freq = entry.get("freq")
-        if isinstance(raw_freq, dict):
-            freq_map = {str(k): float(v) for k, v in raw_freq.items()}
-        for form in forms:
-            rows.append((base, form, freq_map.get(form, 0.5)))
-    return rows
+    groups: dict[str, list[tuple[str, int]]] = {}
+    for surface, count in counter.items():
+        no_tone = strip_accents(surface)
+        groups.setdefault(no_tone, []).append((surface, count))
+
+    rows: list[tuple[str, str, float, float, float]] = []
+    for no_tone, forms in groups.items():
+        group_total = sum(c for _, c in forms)
+        for surface, raw_count in forms:
+            freq = raw_count / group_total if group_total > 0 else 0.0
+            rows.append((no_tone, surface, freq, raw_count, float(group_total)))
+
+    conn.executemany(
+        "INSERT OR IGNORE INTO lexicon_syllables "
+        "(base, surface, freq, freq_count, freq_no_tone) VALUES (?, ?, ?, ?, ?)",
+        rows,
+    )
 
 
 def _populate_words(conn: sqlite3.Connection, resources_dir: Path) -> None:
@@ -194,7 +224,6 @@ def _populate_ocr_confusions(conn: sqlite3.Connection, resources_dir: Path) -> N
 
 def _populate_from_json(conn: sqlite3.Connection, resources_dir: Path) -> None:
     """Populate all tables from JSON resource files in *resources_dir*."""
-    _populate_syllables(conn, resources_dir)
     _populate_words(conn, resources_dir)
     _populate_units(conn, resources_dir)
     _populate_abbreviations(conn, resources_dir)
@@ -357,6 +386,7 @@ def build_lexicon_db(
     trusted_count = 0
     if trusted_jsonl and trusted_jsonl.is_file():
         trusted_count = _populate_trusted_jsonl(conn, trusted_jsonl)
+        _populate_syllables(conn, trusted_jsonl)
         log.info("Loaded %d trusted entries from %s", trusted_count, trusted_jsonl)
     else:
         log.info("No trusted JSONL file at %s, skipping", trusted_jsonl)

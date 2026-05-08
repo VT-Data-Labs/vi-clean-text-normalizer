@@ -243,7 +243,6 @@ class TestValidateLexiconFile:
     def test_all_resource_files_valid(self):
         """Validate every built-in lexicon resource file."""
         resources: list[tuple[str, str]] = [
-            ("syllables.vi.json", "syllable"),
             ("words.vi.json", "word"),
             ("units.vi.json", "unit"),
             ("abbreviations.vi.json", "abbreviation"),

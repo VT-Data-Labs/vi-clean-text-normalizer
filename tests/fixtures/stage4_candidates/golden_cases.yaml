@@ -48,11 +48,11 @@
   expected_exact: []
   description: "Empty string returns empty candidate list"
 
-- input: "dan"
+- input: "muong"
   expected_contains:
-    - "dẫn"
-    - "dần"
-    - "dân"
+    - "muỗng"
+    - "muông"
+    - "mường"
   description: "Plain no-tone input finds accented variants"
 
 - input: "mùông"

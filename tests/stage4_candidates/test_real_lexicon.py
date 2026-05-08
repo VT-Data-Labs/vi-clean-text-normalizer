@@ -20,7 +20,7 @@ from vn_corrector.tokenizer import tokenize
 
 @pytest.fixture(scope="session")
 def real_lexicon():
-    return load_default_lexicon(mode="json")
+    return load_default_lexicon(mode="hybrid")
 
 
 @pytest.fixture(scope="session")
@@ -158,6 +158,18 @@ class TestEdgeCases:
         small_gen = CandidateGenerator(gen._lexicon, config=config)
         candidates = small_gen.generate_token("mùông")
         assert len(candidates) <= 3
+
+    def test_long_generates_long_variant(self, gen: CandidateGenerator) -> None:
+        candidates = gen.generate_token("long")
+        texts = {c.text for c in candidates}
+        assert "lòng" in texts, f"'lòng' not in candidates for 'long': {texts}"
+
+    def test_long_survives_default_candidate_cap(self, gen: CandidateGenerator) -> None:
+        config = CandidateGeneratorConfig(max_candidates_per_token=16)
+        capped_gen = CandidateGenerator(gen._lexicon, config=config)
+        candidates = capped_gen.generate_token("long")
+        texts = {c.text for c in candidates}
+        assert "lòng" in texts, f"'lòng' dropped from candidates at cap=16: {texts}"
 
 
 # ---------------------------------------------------------------------------

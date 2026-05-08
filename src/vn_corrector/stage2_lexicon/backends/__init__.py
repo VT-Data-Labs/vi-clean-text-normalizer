@@ -10,9 +10,11 @@ from vn_corrector.stage2_lexicon.backends.data_store import LexiconDataStore
 
 _SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS lexicon_syllables (
-    base    TEXT NOT NULL,
-    surface TEXT NOT NULL,
-    freq    REAL NOT NULL DEFAULT 0.5,
+    base         TEXT NOT NULL,
+    surface      TEXT NOT NULL,
+    freq         REAL NOT NULL DEFAULT 0.5,
+    freq_count   REAL NOT NULL DEFAULT 0.0,
+    freq_no_tone REAL NOT NULL DEFAULT 0.0,
     PRIMARY KEY (base, surface)
 );
 CREATE TABLE IF NOT EXISTS lexicon_words (

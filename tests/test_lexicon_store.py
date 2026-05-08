@@ -9,7 +9,7 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
-from scripts.build_trusted_lexicon_db import _populate_from_json
+from scripts.build_trusted_lexicon_db import _populate_from_json, _populate_syllables
 from vn_corrector.common.lexicon import (
     AbbreviationEntry,
 )
@@ -18,10 +18,13 @@ from vn_corrector.stage2_lexicon.backends import _SCHEMA_SQL
 
 
 def _build_test_db(db_path: str | Path) -> None:
-    """Build a test SQLite DB from built-in JSON resources."""
+    """Build a test SQLite DB from built-in JSON resources and trusted corpus."""
     conn = sqlite3.connect(str(db_path))
     conn.executescript(_SCHEMA_SQL)
     _populate_from_json(conn, Path("resources/lexicons"))
+    trusted_path = Path("data/lexicon/trusted_words.vi.jsonl")
+    if trusted_path.is_file():
+        _populate_syllables(conn, trusted_path)
     conn.commit()
     conn.close()
 
@@ -213,8 +216,14 @@ class _StoreTestBase:
 
 
 class TestLexiconDataStore(_StoreTestBase):
+    store: LexiconDataStore
+
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.store = LexiconDataStore.from_json_and_sqlite()
+
     def setup_method(self) -> None:
-        self.store = LexiconDataStore.from_json()
+        pass
 
     def test_from_json(self):
         store = LexiconDataStore.from_json()
@@ -271,7 +280,8 @@ class TestLexiconDataStore(_StoreTestBase):
 
     def test_json_does_not_load_trusted(self):
         """LexiconDataStore.from_json() should NOT load trusted words (those are in SQLite)."""
-        word_count = self.store.get_word_count()
+        json_store = LexiconDataStore.from_json()
+        word_count = json_store.get_word_count()
         assert word_count < 2000, (
             f"Expected <2000 words (only built-in JSON), got {word_count}. "
             f"Trusted words should only be loaded via from_sqlite."
@@ -315,7 +325,8 @@ class TestLexiconDataStore(_StoreTestBase):
         """LexiconStore.load_default() should still work (deprecated alias)."""
         store = LexiconStore.load_default()
         assert isinstance(store, LexiconDataStore)
-        assert store.contains_syllable("muỗng")
+        assert store.contains_word("số muỗng")
+        assert store.get_ocr_confusion_count() > 0
 
 
 # ======================================================================
@@ -340,7 +351,7 @@ class TestSqliteLexiconStoreFromPath:
         assert isinstance(store, LexiconDataStore)
 
     def test_load_default_contains_syllables(self):
-        store = LexiconStore.load_default()
+        store = load_default_lexicon("hybrid")
         assert store.contains_syllable("muỗng")
 
     def test_from_sqlite_reuses_existing_db(self):
@@ -366,7 +377,7 @@ class TestLoadDefaultLexicon:
     def test_json_mode(self):
         store = load_default_lexicon("json")
         assert isinstance(store, LexiconDataStore)
-        assert store.contains_syllable("muỗng")
+        assert store.get_ocr_confusion_count() > 0
 
     def test_sqlite_mode_raises_when_db_missing(self):
         import pytest
@@ -379,20 +390,20 @@ class TestLoadDefaultLexicon:
             "sqlite", db_path="/nonexistent/db.sqlite", fallback_to_json=True
         )
         assert isinstance(store, LexiconDataStore)
-        assert store.contains_syllable("muỗng")
-
-    def test_hybrid_mode_raises_when_db_missing(self):
-        import pytest
-
-        with pytest.raises(FileNotFoundError):
-            load_default_lexicon("hybrid", db_path="/nonexistent/db.sqlite")
+        assert store.get_ocr_confusion_count() > 0
 
     def test_hybrid_mode_falls_back_when_requested(self):
         store = load_default_lexicon(
             "hybrid", db_path="/nonexistent/db.sqlite", fallback_to_json=True
         )
         assert isinstance(store, LexiconDataStore)
-        assert store.contains_syllable("muỗng")
+        assert store.get_ocr_confusion_count() > 0
+
+    def test_hybrid_mode_raises_when_db_missing(self):
+        import pytest
+
+        with pytest.raises(FileNotFoundError):
+            load_default_lexicon("hybrid", db_path="/nonexistent/db.sqlite")
 
     def test_sqlite_with_builtin_db(self):
         db_dir = tempfile.mkdtemp()

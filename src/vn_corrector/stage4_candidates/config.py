@@ -14,7 +14,7 @@ class CandidateGeneratorConfig:
     """
 
     # -- Candidate limits --------------------------------------------------
-    max_candidates_per_token: int = 8
+    max_candidates_per_token: int = 32
     max_candidate_combinations_per_window: int = 5000
     max_tokens_per_combination_window: int = 7
 
