@@ -54,7 +54,20 @@ class TestGenerateSequences:
         texts = {" ".join(s.tokens) for s in sequences}
         assert texts == {"a b", "a c"}
 
-    def test_max_combinations_respected(self) -> None:
+    def test_max_combinations_respected_with_many_positions(self) -> None:
+        """Regression: with 30+ positions each having 2 candidates,
+        the total product (2^30 = 1B+) must be capped by max_combinations.
+        """
+        tcs = [_make_tc(f"t{i}", [f"t{i}_a", f"t{i}_b"]) for i in range(30)]
+        window = CandidateWindow(start=0, end=30, token_candidates=tcs)
+        sequences = generate_sequences(
+            window,
+            max_combinations=250,
+            max_per_token=2,
+        )
+        assert len(sequences) <= 250
+        # Also verify it completes quickly — no combinatorial explosion
+        assert len(sequences) > 0
         tcs = [_make_tc(f"t{i}", [f"t{i}_v{j}" for j in range(10)]) for i in range(5)]
         window = CandidateWindow(start=0, end=5, token_candidates=tcs)
         sequences = generate_sequences(

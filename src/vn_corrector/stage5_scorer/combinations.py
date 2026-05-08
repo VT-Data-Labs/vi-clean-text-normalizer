@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+from itertools import islice
 
 from vn_corrector.stage5_scorer.types import CandidateSequence, CandidateWindow
 
@@ -53,7 +54,7 @@ def generate_sequences(
         candidate_lists = [cl[:1] + cl[1:max_per_pos] for cl in candidate_lists]
 
     results: list[CandidateSequence] = []
-    for combo in itertools.product(*candidate_lists):
+    for combo in islice(itertools.product(*candidate_lists), max_combinations):
         zipped = zip(combo, original_tokens, strict=False)
         changed = tuple(i for i, (t, o) in enumerate(zipped) if t != o)
         results.append(
