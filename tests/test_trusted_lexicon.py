@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scripts.build_trusted_lexicon import (
+from scripts.build_trusted_words_vi import (
     MergedEntry,
     RawWord,
     build_no_tone_index,
@@ -476,7 +476,7 @@ class TestBuildPipelineIntegration:
         out_jsonl = tmp_path / "out.jsonl"
 
         # Run pipeline via imports
-        from scripts.build_trusted_lexicon import build_trusted_lexicon
+        from scripts.build_trusted_words_vi import build_trusted_lexicon
 
         entries = build_trusted_lexicon(
             output=out_jsonl,
@@ -509,7 +509,7 @@ class TestBuildPipelineIntegration:
 
         out_jsonl = tmp_path / "out.jsonl"
 
-        from scripts.build_trusted_lexicon import build_trusted_lexicon
+        from scripts.build_trusted_words_vi import build_trusted_lexicon
 
         entries = build_trusted_lexicon(output=out_jsonl, data_dir=tmp_path)
         assert len(entries) == 1  # only muỗng survived

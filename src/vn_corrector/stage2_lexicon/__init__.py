@@ -65,7 +65,7 @@ def load_default_lexicon(
             return LexiconDataStore.from_json()
         raise FileNotFoundError(
             f"SQLite lexicon DB not found at {db_path}. "
-            f"Run ``scripts/build_lexicon_db.py`` first, or use "
+            f"Run ``scripts/build_trusted_lexicon_db.py`` first, or use "
             f"``load_default_lexicon(mode='json')`` or set ``fallback_to_json=True``."
         )
 
@@ -76,7 +76,7 @@ def load_default_lexicon(
         return LexiconDataStore.from_json()
     raise FileNotFoundError(
         f"SQLite lexicon DB not found at {db_path} (required for hybrid mode). "
-        f"Run ``scripts/build_lexicon_db.py`` first, or set ``fallback_to_json=True``."
+        f"Run ``scripts/build_trusted_lexicon_db.py`` first, or set ``fallback_to_json=True``."
     )
 
 

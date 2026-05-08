@@ -91,7 +91,7 @@ warn_unused_ignores = true
 mypy_path = "src"
 namespace_packages = true
 explicit_package_bases = true
-exclude = ["scripts/build_lexicon_db.py", "scripts/build_trusted_lexicon.py"]
+exclude = ["scripts/build_trusted_lexicon_db.py", "scripts/build_trusted_words_vi.py"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"

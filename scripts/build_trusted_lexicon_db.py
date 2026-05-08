@@ -6,7 +6,7 @@ database using the official ``SqliteLexiconStore`` schema.
 
 Usage
 -----
-    python scripts/build_lexicon_db.py \\
+    python scripts/build_trusted_lexicon_db.py \\
         --resources resources/lexicons \\
         --trusted-jsonl data/lexicon/trusted_words.jsonl \\
         --output data/lexicon/trusted_lexicon.db
@@ -33,7 +33,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S",
 )
-log = logging.getLogger("build_lexicon_db")
+log = logging.getLogger("build_trusted_lexicon_db")
 
 
 # ---------------------------------------------------------------------------

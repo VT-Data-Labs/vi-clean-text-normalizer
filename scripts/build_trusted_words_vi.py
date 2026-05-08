@@ -3,7 +3,7 @@
 
 Usage
 -----
-    python scripts/build_trusted_lexicon.py \\
+    python scripts/build_trusted_words_vi.py \\
         --output data/lexicon/trusted_words.vi.jsonl
 
 Sources
@@ -49,7 +49,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S",
 )
-log = logging.getLogger("build_trusted")
+log = logging.getLogger("build_trusted_words_vi")
 
 # ---------------------------------------------------------------------------
 # Constants

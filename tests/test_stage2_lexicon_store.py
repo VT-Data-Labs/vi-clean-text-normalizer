@@ -11,7 +11,7 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
-from scripts.build_lexicon_db import (
+from scripts.build_trusted_lexicon_db import (
     _populate_from_json,
     _populate_trusted_jsonl,
 )

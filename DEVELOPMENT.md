@@ -128,7 +128,7 @@ resources/
 │   └── ngram_store.vi.json   # Merged bigrams/trigrams/fourgrams
 ├── matchers/                  # YAML matcher configs (URL, email, phone, etc.)
 data/lexicon/
-    └── trusted_lexicon.db    # SQLite DB (built by build_lexicon_db.py)
+    └── trusted_lexicon.db    # SQLite DB (built by build_trusted_lexicon_db.py)
 ```
 
 ---
@@ -142,8 +142,8 @@ cd vi-clean-text-normalizer
 uv sync --all-extras
 
 # Build the SQLite lexicon DB (optional, needed for sqlite/hybrid backends)
-python scripts/build_trusted_lexicon.py --output data/lexicon/trusted_words.jsonl
-python scripts/build_lexicon_db.py \
+python scripts/build_trusted_words_vi.py --output data/lexicon/trusted_words.jsonl
+python scripts/build_trusted_lexicon_db.py \
     --resources resources/lexicons \
     --trusted-jsonl data/lexicon/trusted_words.jsonl \
     --output data/lexicon/trusted_lexicon.db

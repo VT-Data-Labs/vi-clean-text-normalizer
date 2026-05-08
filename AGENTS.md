@@ -81,8 +81,8 @@ and ``stage2_lexicon.core.normalize`` for migration. New code **must not** use t
 
 - **Lexicons**: `resources/lexicons/` — 9 JSON files (syllables, words, phrases, units, abbreviations, ocr_confusions, foreign_words, chemicals, lexicon_package)
 - **N-grams**: `data/processed/ngram_store.vi.json` — bigrams and trigrams with confidence scores
-- **Build scripts**: `scripts/` includes `build_lexicon_db.py`, `build_trusted_lexicon.py`, `build_ngram_store.py`, `download_lexicon_sources.py`
-- `scripts/build_lexicon_db.py` and `scripts/build_trusted_lexicon.py` are excluded from mypy (see `pyproject.toml` overrides)
+- **Build scripts**: `scripts/` includes `build_trusted_lexicon_db.py`, `build_trusted_words_vi.py`, `build_ngram_store.py`, `download_lexicon_sources.py`
+- `scripts/build_trusted_lexicon_db.py` and `scripts/build_trusted_words_vi.py` are excluded from mypy (see `pyproject.toml` overrides)
 - Generated artifacts `resources/lexicons/lexicon_package.json` and `resources/lexicon/trusted_words.vi.jsonl` are gitignored
 
 ## Testing rules
@@ -119,7 +119,7 @@ Before final response, summarize:
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **vi-clean-text-normalizer** (3781 symbols, 6423 relationships, 64 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **vi-clean-text-normalizer** (4311 symbols, 7201 relationships, 67 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
