@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from vn_corrector.common.lexicon import LexiconStoreInterface
+from vn_corrector.stage1_normalize import strip_accents
 from vn_corrector.stage4_candidates.types import CandidateSource
 from vn_corrector.stage5_scorer.combinations import generate_sequences
 from vn_corrector.stage5_scorer.config import PhraseScorerConfig
@@ -17,6 +18,42 @@ from vn_corrector.stage5_scorer.types import (
     TokenCorrectionExplanation,
 )
 from vn_corrector.stage5_scorer.weights import ScoringWeights
+from vn_corrector.utils.unicode import contains_vietnamese
+
+
+def _is_accentless_variant_correction(
+    original: str,
+    candidate: str,
+    lexicon: LexiconStoreInterface,
+) -> bool:
+    """Check if *candidate* is a valid accented variant of accentless *original*.
+
+    Returns ``True`` when all of the following hold:
+    1. *original* has zero Vietnamese characters (bare Latin/no-tone form).
+    2. *candidate* has at least one Vietnamese character (accented form).
+    3. Stripping accents from *candidate* yields *original* (same base).
+    4. The lexicon contains at least one accented surface matching *candidate*
+       for the accentless key.
+
+    This prevents the overcorrection penalty from blocking legitimate
+    diacritic restoration like ``he → hệ`` while still protecting real
+    overcorrections like ``anh → ảnh`` when the original already has valid
+    Vietnamese meaning.
+    """
+    if original == candidate:
+        return False
+    if contains_vietnamese(original):
+        return False
+    if not contains_vietnamese(candidate):
+        return False
+    if strip_accents(candidate).lower() != original.lower():
+        return False
+    result = lexicon.lookup_accentless(original)
+    if not result.found or not result.entries:
+        return False
+    return any(
+        hasattr(e, "surface") and e.surface.lower() == candidate.lower() for e in result.entries
+    )
 
 
 class PhraseScorer:
@@ -174,17 +211,19 @@ class PhraseScorer:
         tokens: tuple[str, ...],
         original_tokens: tuple[str, ...],
     ) -> float:
-        changed_valid = 0
+        penalized_changes = 0
         total = 0
         for token, orig in zip(tokens, original_tokens, strict=False):
             if token == orig:
                 continue
             total += 1
-            if self._lexicon.contains_word(orig):
-                changed_valid += 1
+            if self._lexicon.contains_word(orig) and not _is_accentless_variant_correction(
+                orig, token, self._lexicon
+            ):
+                penalized_changes += 1
         if total == 0:
             return 0.0
-        return changed_valid / total
+        return penalized_changes / total
 
     def _score_negative_phrase_penalty(self, tokens: tuple[str, ...]) -> float:
         content = tuple(t for t in tokens if t.strip())

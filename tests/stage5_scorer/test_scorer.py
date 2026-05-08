@@ -7,10 +7,12 @@ from typing import Any, ClassVar
 import pytest
 
 from vn_corrector.common.lexicon import (
+    LexiconEntry,
     LexiconLookupResult,
     LexiconStoreInterface,
     OcrConfusionLookupResult,
 )
+from vn_corrector.common.scoring import Score
 from vn_corrector.stage4_candidates.types import (
     Candidate,
     CandidateEvidence,
@@ -55,6 +57,20 @@ class FakeLexicon(LexiconStoreInterface):
         "hè",
         "chính",
         "chủ",
+        "he",
+        "mối",
+        "quan",
+        "quân",
+        "quận",
+    }
+
+    _NO_TONE_MAP: ClassVar[dict[str, list[str]]] = {
+        "he": ["he", "hệ", "hè"],
+        "dien": ["dien", "điện", "diện"],
+        "thoai": ["thoai", "thoại", "thoái"],
+        "lien": ["lien", "liên", "liền"],
+        "moi": ["moi", "mối", "mọi"],
+        "quan": ["quan", "quân", "quận"],
     }
 
     def contains_word(self, text: str) -> bool:
@@ -67,6 +83,19 @@ class FakeLexicon(LexiconStoreInterface):
         return LexiconLookupResult(query=text, found=False)
 
     def lookup_accentless(self, text: str) -> LexiconLookupResult:
+        surfaces = self._NO_TONE_MAP.get(text.lower(), [])
+        if surfaces:
+            entries = tuple(
+                LexiconEntry(
+                    entry_id=f"syllable/{s}",
+                    surface=s,
+                    normalized=s,
+                    no_tone=text.lower(),
+                    score=Score(confidence=0.5),
+                )
+                for s in surfaces
+            )
+            return LexiconLookupResult(query=text, found=True, entries=entries)
         return LexiconLookupResult(query=text, found=False)
 
     def lookup_abbreviation(self, text: str) -> LexiconLookupResult:
@@ -417,4 +446,32 @@ class TestPhraseScorer:
         assert scores[correct] > scores[wrong], (
             f"Correct ({correct}: {scores[correct]:.4f}) should outrank "
             f"wrong ({wrong}: {scores[wrong]:.4f})"
+        )
+
+    def test_accentless_variant_not_penalized(self, scorer: PhraseScorer) -> None:
+        """Accentless→accented corrections should not incur overcorrection penalty.
+
+        "he" is a known word in the lexicon, but since it's a bare no-tone
+        form with accented alternatives, changing it to "hệ" should be
+        penalty-free.
+        """
+        tcs = [
+            _make_tc(
+                "he",
+                [
+                    ("he", True, 0, CandidateSource.ORIGINAL),
+                    ("hệ", False, 1, CandidateSource.SYLLABLE_MAP),
+                    ("hè", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+        ]
+        windows = build_windows(tcs)
+        result = scorer.score_window(windows[0])
+        corrected_text = "hệ"
+        corrected_seq = next(
+            s for s in result.ranked_sequences if " ".join(s.sequence.tokens) == corrected_text
+        )
+        assert corrected_seq.breakdown.overcorrection_penalty == 0.0, (
+            f"Expected 0.0 overcorrection penalty for accentless→accented "
+            f"correction, got {corrected_seq.breakdown.overcorrection_penalty}"
         )
