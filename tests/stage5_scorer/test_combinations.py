@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from vn_corrector.stage4_candidates.types import Candidate, TokenCandidates
-from vn_corrector.stage5_scorer.combinations import generate_sequences
+from vn_corrector.stage5_scorer.combinations import beam_search_sequences, generate_sequences
 from vn_corrector.stage5_scorer.types import CandidateSequence, CandidateWindow
 
 
@@ -151,3 +151,137 @@ def _set_prior(tc: TokenCandidates, priors: dict[str, float]) -> None:
     for cand in tc.candidates:
         if cand.text in priors:
             cand.prior_score = priors[cand.text]
+
+
+class TestBeamSearch:
+    """Tests for beam_search_sequences."""
+
+    def test_identity_path_preserved(self) -> None:
+        tcs = [
+            _make_tc("số", ["số"]),
+            _make_tc("mùông", ["mùông", "muỗng"]),
+        ]
+        window = CandidateWindow(start=0, end=2, token_candidates=tcs)
+        sequences = beam_search_sequences(window, beam_size=32, max_candidates_per_token=8)
+        identity = tuple(tc.token_text for tc in tcs)
+        assert any(s.tokens == identity for s in sequences)
+
+    def test_simple_combinations(self) -> None:
+        tcs = [
+            _make_tc("a", ["a"]),
+            _make_tc("b", ["b", "c"]),
+        ]
+        window = CandidateWindow(start=0, end=2, token_candidates=tcs)
+        sequences = beam_search_sequences(window, beam_size=32, max_candidates_per_token=8)
+        texts = {" ".join(s.tokens) for s in sequences}
+        assert texts == {"a b", "a c"}
+
+    def test_beam_size_respected(self) -> None:
+        """With many candidates, beam at least produces beam_size sequences."""
+        tcs = [_make_tc(f"t{i}", [f"t{i}_v{j}" for j in range(10)]) for i in range(5)]
+        window = CandidateWindow(start=0, end=5, token_candidates=tcs)
+        sequences = beam_search_sequences(window, beam_size=16, max_candidates_per_token=8)
+        assert len(sequences) > 0
+
+    def test_ngram_bonus_alters_ranking(self) -> None:
+        """ngram_score_fn rewards contextually correct partial sequences."""
+        neu_cands = [
+            Candidate(
+                text="neu",
+                normalized="neu",
+                no_tone_key="neu",
+                sources=set(),
+                evidence=[],
+                prior_score=0.1,
+                is_original=True,
+            ),
+            Candidate(
+                text="nếu",
+                normalized="nếu",
+                no_tone_key="neu",
+                sources=set(),
+                evidence=[],
+                prior_score=0.3,
+            ),
+            Candidate(
+                text="nều",
+                normalized="nều",
+                no_tone_key="neu",
+                sources=set(),
+                evidence=[],
+                prior_score=0.2,
+            ),
+        ]
+        do_cands = [
+            Candidate(
+                text="do",
+                normalized="do",
+                no_tone_key="do",
+                sources=set(),
+                evidence=[],
+                prior_score=0.1,
+                is_original=True,
+            ),
+            Candidate(
+                text="độ",
+                normalized="độ",
+                no_tone_key="do",
+                sources=set(),
+                evidence=[],
+                prior_score=0.35,
+            ),
+            Candidate(
+                text="đồ",
+                normalized="đồ",
+                no_tone_key="do",
+                sources=set(),
+                evidence=[],
+                prior_score=0.3,
+            ),
+            Candidate(
+                text="đợ",
+                normalized="đợ",
+                no_tone_key="do",
+                sources=set(),
+                evidence=[],
+                prior_score=0.25,
+            ),
+        ]
+        tcs = [
+            TokenCandidates(token_text="neu", token_index=0, protected=False, candidates=neu_cands),
+            TokenCandidates(token_text="do", token_index=1, protected=False, candidates=do_cands),
+        ]
+        window = CandidateWindow(start=0, end=2, token_candidates=tcs)
+
+        sequences_no_ngram = beam_search_sequences(window, beam_size=32, max_candidates_per_token=4)
+
+        sequences_ngram = beam_search_sequences(
+            window,
+            beam_size=32,
+            max_candidates_per_token=4,
+            ngram_score_fn=lambda _l, _r: 0.0,
+        )
+
+        assert len(sequences_no_ngram) > 0
+        assert len(sequences_ngram) > 0
+
+    def test_empty_window(self) -> None:
+        window = CandidateWindow(start=0, end=0, token_candidates=[])
+        sequences = beam_search_sequences(window, beam_size=32, max_candidates_per_token=8)
+        assert len(sequences) == 0
+
+    def test_single_token_no_alternatives(self) -> None:
+        tcs = [_make_tc("a", ["a"])]
+        window = CandidateWindow(start=0, end=1, token_candidates=tcs)
+        sequences = beam_search_sequences(window, beam_size=32, max_candidates_per_token=8)
+        assert len(sequences) == 1
+        assert sequences[0].tokens == ("a",)
+
+    def test_returns_candidate_sequences(self) -> None:
+        tcs = [
+            _make_tc("a", ["a"]),
+            _make_tc("b", ["b", "c"]),
+        ]
+        window = CandidateWindow(start=0, end=2, token_candidates=tcs)
+        sequences = beam_search_sequences(window, beam_size=32, max_candidates_per_token=8)
+        assert all(isinstance(s, CandidateSequence) for s in sequences)

@@ -19,3 +19,8 @@ class PhraseScorerConfig:
     enable_fourgram_score: bool = True
     enable_domain_context: bool = True
     enable_negative_phrase_penalty: bool = True
+
+    # Beam search (production path)
+    enable_beam_search: bool = True
+    beam_size: int = 32
+    beam_candidates_per_token: int = 8

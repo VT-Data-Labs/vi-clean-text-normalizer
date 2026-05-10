@@ -5,7 +5,7 @@ from __future__ import annotations
 from vn_corrector.common.lexicon import LexiconStoreInterface
 from vn_corrector.stage1_normalize import strip_accents
 from vn_corrector.stage4_candidates.types import CandidateSource
-from vn_corrector.stage5_scorer.combinations import generate_sequences
+from vn_corrector.stage5_scorer.combinations import beam_search_sequences, generate_sequences
 from vn_corrector.stage5_scorer.config import PhraseScorerConfig
 from vn_corrector.stage5_scorer.ngram_store import NgramStore
 from vn_corrector.stage5_scorer.types import (
@@ -141,11 +141,19 @@ class PhraseScorer:
         domain: str | None = None,
     ) -> ScoredWindow:
         """Score every candidate sequence in *window* and return ranked results."""
-        sequences = generate_sequences(
-            window,
-            max_combinations=self._config.max_combinations,
-            max_per_token=self._config.max_candidates_per_token,
-        )
+        if self._config.enable_beam_search:
+            sequences = beam_search_sequences(
+                window,
+                beam_size=self._config.beam_size,
+                max_candidates_per_token=self._config.beam_candidates_per_token,
+                ngram_score_fn=self._ngram_store.bigram_score,
+            )
+        else:
+            sequences = generate_sequences(
+                window,
+                max_combinations=self._config.max_combinations,
+                max_per_token=self._config.max_candidates_per_token,
+            )
         scored = [self._score_sequence(s, window, domain) for s in sequences]
         scored.sort(key=lambda s: s.score, reverse=True)
         return ScoredWindow(window=window, ranked_sequences=scored)

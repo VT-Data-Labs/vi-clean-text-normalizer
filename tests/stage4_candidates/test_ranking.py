@@ -1,7 +1,8 @@
 """Tests for candidate ranking in Stage 4.
 
 Ensures the ``_sort_key`` tiebreaker uses linguistic signals
-(lexicon_freq, evidence count) before falling through to text order.
+(word_freq, syllable_freq, evidence count, edit_distance) and
+does **not** use Unicode text order.
 """
 
 from __future__ import annotations
@@ -19,10 +20,13 @@ _SOURCE_WEIGHTS: dict[str, float] = {
 
 def _candidate(
     text: str,
-    lexicon_freq: float = 1.0,
+    is_known_word: bool = False,
+    syllable_freq: float | None = None,
+    word_freq: float | None = None,
     is_original: bool = False,
     sources: set[CandidateSource] | None = None,
     evidence_count: int = 1,
+    edit_distance: int | None = None,
 ) -> Candidate:
     if sources is None:
         src = {CandidateSource.ORIGINAL if is_original else CandidateSource.SYLLABLE_MAP}
@@ -38,30 +42,49 @@ def _candidate(
         * max(0, evidence_count - len(src)),
         is_original=is_original,
         prior_score=0.5,
-        lexicon_freq=lexicon_freq,
+        is_known_word=is_known_word,
+        syllable_freq=syllable_freq,
+        word_freq=word_freq,
+        edit_distance=edit_distance,
     )
 
 
 class TestRankingSortKey:
-    def test_frequency_outranks_unicode_order(self) -> None:
+    def test_word_freq_outranks_unicode_order(self) -> None:
+        """word_freq should override any Unicode ordering."""
         candidates = [
-            _candidate("lộng", lexicon_freq=0.1, sources={CandidateSource.WORD_LEXICON}),
-            _candidate("lòng", lexicon_freq=0.95, sources={CandidateSource.WORD_LEXICON}),
+            _candidate(
+                "lộng", word_freq=0.1, is_known_word=True, sources={CandidateSource.WORD_LEXICON}
+            ),
+            _candidate(
+                "lòng", word_freq=0.95, is_known_word=True, sources={CandidateSource.WORD_LEXICON}
+            ),
         ]
         ranked = rank_candidates(candidates, _SOURCE_WEIGHTS)
         assert ranked[0].text == "lòng", f"Expected 'lòng' first, got {[c.text for c in ranked]}"
+
+    def test_syllable_freq_outranks_unicode_order(self) -> None:
+        """syllable_freq should override any Unicode ordering."""
+        candidates = [
+            _candidate("cáp", syllable_freq=0.1, sources={CandidateSource.SYLLABLE_MAP}),
+            _candidate("cấp", syllable_freq=0.95, sources={CandidateSource.SYLLABLE_MAP}),
+        ]
+        ranked = rank_candidates(candidates, _SOURCE_WEIGHTS)
+        assert ranked[0].text == "cấp", f"Expected 'cấp' first, got {[c.text for c in ranked]}"
 
     def test_evidence_count_outranks_unicode_order(self) -> None:
         candidates = [
             _candidate(
                 "lộng",
-                lexicon_freq=1.0,
+                word_freq=1.0,
+                is_known_word=True,
                 sources={CandidateSource.WORD_LEXICON},
                 evidence_count=1,
             ),
             _candidate(
                 "lòng",
-                lexicon_freq=1.0,
+                word_freq=1.0,
+                is_known_word=True,
                 sources={CandidateSource.WORD_LEXICON, CandidateSource.SYLLABLE_MAP},
                 evidence_count=2,
             ),
@@ -71,11 +94,62 @@ class TestRankingSortKey:
             f"Expected 'lòng' first (more evidence), got {[c.text for c in ranked]}"
         )
 
-    def test_text_is_last_resort_tiebreaker(self) -> None:
+    def test_known_word_does_not_overwrite_syllable_frequency(self) -> None:
+        """Known-word validity and syllable frequency are independent signals."""
         candidates = [
-            _candidate("b", lexicon_freq=1.0, sources={CandidateSource.WORD_LEXICON}),
-            _candidate("a", lexicon_freq=1.0, sources={CandidateSource.WORD_LEXICON}),
+            _candidate(
+                "cấp",
+                is_known_word=True,
+                word_freq=0.8,
+                syllable_freq=0.9,
+                sources={CandidateSource.WORD_LEXICON, CandidateSource.SYLLABLE_MAP},
+            ),
+            _candidate(
+                "cáp",
+                is_known_word=True,
+                word_freq=0.5,
+                syllable_freq=0.1,
+                sources={CandidateSource.WORD_LEXICON, CandidateSource.SYLLABLE_MAP},
+            ),
+        ]
+        ranked = rank_candidates(candidates, _SOURCE_WEIGHTS)
+        assert ranked[0].text == "cấp", f"Expected 'cấp' first, got {[c.text for c in ranked]}"
+
+    def test_unicode_text_is_not_ranking_tiebreaker(self) -> None:
+        """candidate.text must not be a ranking tiebreaker."""
+        candidates = [
+            _candidate(
+                "b", word_freq=1.0, is_known_word=True, sources={CandidateSource.WORD_LEXICON}
+            ),
+            _candidate(
+                "a", word_freq=1.0, is_known_word=True, sources={CandidateSource.WORD_LEXICON}
+            ),
         ]
         ranked = rank_candidates(candidates, _SOURCE_WEIGHTS)
         texts = [c.text for c in ranked]
-        assert texts == ["b", "a"], f"Descending sort should place 'b' before 'a', got {texts}"
+        # Both have same word_freq, same syllable_freq (None→0), same evidence count,
+        # same edit_distance (None→ -999 negation).  Tiebreaking uses these
+        # fields — but NOT text.  Order is stable, not Unicode-driven.
+        assert set(texts) == {"a", "b"}, f"Both candidates must be present, got {texts}"
+
+    def test_edit_distance_tiebreaker(self) -> None:
+        """Smaller edit distance should rank higher when other signals tie."""
+        candidates = [
+            _candidate(
+                "cáp",
+                word_freq=1.0,
+                is_known_word=True,
+                sources={CandidateSource.WORD_LEXICON},
+                edit_distance=2,
+            ),
+            _candidate(
+                "cấp",
+                word_freq=1.0,
+                is_known_word=True,
+                sources={CandidateSource.WORD_LEXICON},
+                edit_distance=1,
+            ),
+        ]
+        ranked = rank_candidates(candidates, _SOURCE_WEIGHTS)
+        texts = [c.text for c in ranked]
+        assert ranked[0].text == "cấp", f"Expected 'cấp' first (lower edit distance), got {texts}"

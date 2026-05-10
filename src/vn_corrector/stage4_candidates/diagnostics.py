@@ -20,7 +20,10 @@ def format_candidate_debug(candidate: Candidate) -> list[str]:
     lines.append(f"    normalized='{candidate.normalized}' no_tone='{candidate.no_tone_key}'")
     sources_str = ", ".join(str(s) for s in sorted(candidate.sources))
     lines.append(f"    sources=[{sources_str}]")
-    lines.append(f"    is_original={candidate.is_original} lex_freq={candidate.lexicon_freq:.4f}")
+    lines.append(f"    is_original={candidate.is_original}")
+    sf = candidate.syllable_freq
+    wf = candidate.word_freq
+    lines.append(f"    is_known_word={candidate.is_known_word} syllable_freq={sf} word_freq={wf}")
     if candidate.edit_distance is not None:
         lines.append(f"    edit_distance={candidate.edit_distance}")
     if candidate.replacement_token_count > 1:
