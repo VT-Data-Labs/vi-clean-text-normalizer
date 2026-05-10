@@ -1,0 +1,677 @@
+# Instincts generated from https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+# Generated: 2026-05-10T16:05:26.396Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: vi-clean-text-normalizer-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Commit Length
+
+## Action
+
+Write moderate-length commit messages (~62 characters)
+
+## Evidence
+
+- Average commit message length: 62 chars
+- Based on 80 commits
+
+---
+id: vi-clean-text-normalizer-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Naming Files
+
+## Action
+
+Use snake_case naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: snake_case
+
+---
+id: vi-clean-text-normalizer-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: vi-clean-text-normalizer-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: vi-clean-text-normalizer-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: vi-clean-text-normalizer-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Test Naming
+
+## Action
+
+Name test files using the pattern: *.test.ts
+
+## Evidence
+
+- File pattern: *.test.ts
+- Consistent across test files
+
+---
+id: vi-clean-text-normalizer-test-types
+trigger: "when planning tests for a feature"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Test Types
+
+## Action
+
+Write unit, integration tests to match project standards
+
+## Evidence
+
+- Test types detected: unit, integration
+- Coverage config: no
+
+---
+id: vi-clean-text-normalizer-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~17x per month
+- Files: **/*.test.*
+
+---
+id: vi-clean-text-normalizer-workflow-refactoring
+trigger: "when refactoring code"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Workflow Refactoring
+
+## Action
+
+Follow the refactoring workflow:
+1. Ensure tests pass before refactor
+2. Refactor code structure
+3. Verify tests still pass
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: src/**/*
+
+---
+id: vi-clean-text-normalizer-workflow-feature-module-development
+trigger: "when doing feature module development"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Workflow Feature Module Development
+
+## Action
+
+Follow the feature-module-development workflow:
+1. Create new module directory under src/vn_corrector/stageX_*/ or src/vn_corrector/feature/
+2. Add core implementation files (e.g., .py for logic, config, types)
+3. Add or update configuration files (config.py, types.py, etc.)
+4. Add or update test files in tests/stageX_*/ or tests/feature/
+5. Integrate with pipeline or CLI if needed
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: src/vn_corrector/stage*/__init__.py, src/vn_corrector/stage*/*.py, tests/stage*/*.py
+
+---
+id: vi-clean-text-normalizer-workflow-design-docs-before-implementation
+trigger: "when doing design docs before implementation"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Workflow Design Docs Before Implementation
+
+## Action
+
+Follow the design-docs-before-implementation workflow:
+1. Create a design spec in docs/superpowers/specs/*.md
+2. Create an implementation plan in docs/superpowers/plans/*.md
+3. Reference or link these docs in the related feature PR or commit
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: docs/superpowers/specs/*.md, docs/superpowers/plans/*.md
+
+---
+id: vi-clean-text-normalizer-workflow-refactor-module-restructure
+trigger: "when doing refactor module restructure"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Workflow Refactor Module Restructure
+
+## Action
+
+Follow the refactor-module-restructure workflow:
+1. Move or rename files/directories (e.g., lexicon/, evaluation/, types.py)
+2. Update all imports and references across codebase
+3. Update related test files
+4. Update documentation if needed
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: src/vn_corrector/common/*.py, src/vn_corrector/lexicon/*.py, src/vn_corrector/stage*/*.py
+
+---
+id: vi-clean-text-normalizer-workflow-add-or-update-tests-for-feature
+trigger: "when doing add or update tests for feature"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Workflow Add Or Update Tests For Feature
+
+## Action
+
+Follow the add-or-update-tests-for-feature workflow:
+1. Add or update test files in tests/ matching the feature/module
+2. Add regression, acceptance, or golden tests as needed
+3. Ensure tests cover new code paths
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: tests/stage*/*.py, tests/feature/*.py, tests/fixtures/**/*.yaml
+
+---
+id: vi-clean-text-normalizer-workflow-data-pipeline-update
+trigger: "when doing data pipeline update"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Workflow Data Pipeline Update
+
+## Action
+
+Follow the data-pipeline-update workflow:
+1. Update or add data files in data/ or resources/
+2. Update or add build scripts in scripts/
+3. Regenerate processed data artifacts (e.g., .db, .json)
+4. Update code to use new data or schema if needed
+5. Update or add tests to validate new data
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: data/lexicon/*.db, data/processed/*.json, resources/lexicons/*.json
+
+---
+id: vi-clean-text-normalizer-workflow-documentation-update-for-feature-or-release
+trigger: "when doing documentation update for feature or release"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Workflow Documentation Update For Feature Or Release
+
+## Action
+
+Follow the documentation-update-for-feature-or-release workflow:
+1. Edit README.md, AGENTS.md, or DEVELOPMENT.md
+2. Document new features, modules, or code quality rules
+3. Update diagrams, status checklists, or example outputs
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: README.md, AGENTS.md, DEVELOPMENT.md
+
+---
+id: vi-clean-text-normalizer-instinct-file-naming
+trigger: "When creating or renaming files."
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct File Naming
+
+## Action
+
+Use snake_case for file names.
+
+## Evidence
+
+- Pattern in src/vn_corrector/
+- Pattern in scripts/build_lexicon_db.py
+
+---
+id: vi-clean-text-normalizer-instinct-function-naming
+trigger: "When defining functions."
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Function Naming
+
+## Action
+
+Use camelCase for function names.
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.functions
+
+---
+id: vi-clean-text-normalizer-instinct-class-naming
+trigger: "When defining classes."
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Class Naming
+
+## Action
+
+Use PascalCase for class names.
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.classes
+
+---
+id: vi-clean-text-normalizer-instinct-constant-naming
+trigger: "When defining constants."
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Constant Naming
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constants.
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.constants
+
+---
+id: vi-clean-text-normalizer-instinct-import-style
+trigger: "When importing modules."
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Import Style
+
+## Action
+
+Use relative imports within the package.
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+
+---
+id: vi-clean-text-normalizer-instinct-export-style
+trigger: "When exporting functions or classes."
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Export Style
+
+## Action
+
+Use named exports.
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+
+---
+id: vi-clean-text-normalizer-instinct-test-location
+trigger: "When adding or updating tests."
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Test Location
+
+## Action
+
+Place tests in the separate tests/ directory mirroring the src/ structure.
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation
+- Pattern in tests/stage*/*.py
+
+---
+id: vi-clean-text-normalizer-instinct-test-types
+trigger: "When writing tests."
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Test Types
+
+## Action
+
+Include both unit and integration tests for new features or modules.
+
+## Evidence
+
+- Pattern in testing.testTypes
+- Seen in add-or-update-tests-for-feature workflow
+
+---
+id: vi-clean-text-normalizer-instinct-test-coverage
+trigger: "When adding new code paths."
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Test Coverage
+
+## Action
+
+Ensure tests cover all new code paths, including regression and acceptance tests as needed.
+
+## Evidence
+
+- add-or-update-tests-for-feature workflow
+- Commit sequence: Ensure tests cover new code paths
+
+---
+id: vi-clean-text-normalizer-instinct-git-commit-prefix
+trigger: "When making a commit."
+confidence: 0.95
+domain: git
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Git Commit Prefix
+
+## Action
+
+Prefix commit messages with a type (e.g., feat, fix, refactor, docs, chore, rename, m3) followed by a colon.
+
+## Evidence
+
+- Pattern in commits.prefixes
+- Seen in commit: fix: cap candidate sequence enumeration...
+
+---
+id: vi-clean-text-normalizer-instinct-git-commit-length
+trigger: "When writing a commit message."
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Git Commit Length
+
+## Action
+
+Keep commit messages concise, typically under 80 characters.
+
+## Evidence
+
+- Pattern in commits.averageLength
+
+---
+id: vi-clean-text-normalizer-instinct-feature-module-workflow
+trigger: "When adding a new pipeline stage or major feature."
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Feature Module Workflow
+
+## Action
+
+Create a new module directory, add implementation/config/tests, and integrate with pipeline or CLI.
+
+## Evidence
+
+- feature-module-development workflow
+- Example commit sequences and files
+
+---
+id: vi-clean-text-normalizer-instinct-design-docs-workflow
+trigger: "When planning a new major feature or pipeline stage."
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Design Docs Workflow
+
+## Action
+
+Create a design spec and implementation plan in docs/superpowers, and reference them in the related PR or commit.
+
+## Evidence
+
+- design-docs-before-implementation workflow
+- Example files: docs/superpowers/specs/*.md
+
+---
+id: vi-clean-text-normalizer-instinct-refactor-module-workflow
+trigger: "When restructuring, splitting, or merging modules."
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Refactor Module Workflow
+
+## Action
+
+Move/rename files, update all imports/references, update related tests and docs.
+
+## Evidence
+
+- refactor-module-restructure workflow
+- Example commit sequence and files
+
+---
+id: vi-clean-text-normalizer-instinct-add-tests-workflow
+trigger: "When implementing a new feature or fixing a bug."
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Add Tests Workflow
+
+## Action
+
+Add or update tests in tests/ matching the feature/module, including regression and golden tests.
+
+## Evidence
+
+- add-or-update-tests-for-feature workflow
+- Example files: tests/stage*/*.py
+
+---
+id: vi-clean-text-normalizer-instinct-data-pipeline-update-workflow
+trigger: "When updating lexicon sources, ngram data, or build scripts."
+confidence: 0.88
+domain: workflow
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Data Pipeline Update Workflow
+
+## Action
+
+Update/add data files and scripts, regenerate artifacts, update code/tests to use new data.
+
+## Evidence
+
+- data-pipeline-update workflow
+- Example files: data/lexicon/*.db, scripts/build_*.py
+
+---
+id: vi-clean-text-normalizer-instinct-docs-update-workflow
+trigger: "When a new feature is added, module layout changes, or a milestone is reached."
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: Vi-Lang-Foundation/vi-clean-text-normalizer
+---
+
+# Vi Clean Text Normalizer Instinct Docs Update Workflow
+
+## Action
+
+Edit README.md, AGENTS.md, or DEVELOPMENT.md to document changes, features, and update diagrams.
+
+## Evidence
+
+- documentation-update-for-feature-or-release workflow
+- Example files: README.md
+
