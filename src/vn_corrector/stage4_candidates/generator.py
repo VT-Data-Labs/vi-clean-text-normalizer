@@ -39,6 +39,15 @@ from vn_corrector.stage4_candidates.types import (
 )
 
 
+def merge_optional_max(old: float | None, new: float | None) -> float | None:
+    """Return the maximum of two optional floats, treating ``None`` as absence."""
+    if old is None:
+        return new
+    if new is None:
+        return old
+    return max(old, new)
+
+
 class CandidateGenerator:
     """Deterministic, bounded, explainable candidate generator.
 
@@ -293,9 +302,9 @@ class CandidateGenerator:
             ):
                 cand.edit_distance = prop.edit_distance
 
-            # Propagate lexicon frequency for ranking tiebreakers
-            if prop.lexicon_freq > cand.lexicon_freq:
-                cand.lexicon_freq = prop.lexicon_freq
+            cand.is_known_word = cand.is_known_word or prop.is_known_word
+            cand.syllable_freq = merge_optional_max(cand.syllable_freq, prop.syllable_freq)
+            cand.word_freq = merge_optional_max(cand.word_freq, prop.word_freq)
 
             # Propagate replacement_token_count from evidence metadata
             rtc = prop.evidence.metadata.get("replacement_token_count", 1)
@@ -382,4 +391,4 @@ class CandidateGenerator:
         return str(token_type) in self._config.identity_token_types
 
 
-__all__ = ["CandidateGenerator"]
+__all__ = ["CandidateGenerator", "merge_optional_max"]

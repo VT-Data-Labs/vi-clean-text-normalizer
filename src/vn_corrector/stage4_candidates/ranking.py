@@ -8,6 +8,14 @@ from __future__ import annotations
 
 from vn_corrector.stage4_candidates.types import Candidate
 
+# Prior-scoring weight constants
+KNOWN_WORD_BONUS = 0.05
+SYLLABLE_FREQ_WEIGHT = 0.3
+WORD_FREQ_WEIGHT = 0.15
+ORIGINAL_BONUS = 0.05
+EVIDENCE_WEIGHT = 0.02
+EVIDENCE_CAP = 5
+
 
 def compute_prior_score(
     candidate: Candidate,
@@ -24,15 +32,24 @@ def compute_prior_score(
             best_weight = w
     score += best_weight
 
-    # Frequency bonus
-    score += candidate.lexicon_freq * 0.3
+    # Known-word bonus
+    if candidate.is_known_word:
+        score += KNOWN_WORD_BONUS
+
+    # Syllable frequency bonus
+    if candidate.syllable_freq is not None:
+        score += candidate.syllable_freq * SYLLABLE_FREQ_WEIGHT
+
+    # Word frequency bonus
+    if candidate.word_freq is not None:
+        score += candidate.word_freq * WORD_FREQ_WEIGHT
 
     # Original bonus
     if candidate.is_original:
-        score += 0.05
+        score += ORIGINAL_BONUS
 
-    # Evidence count bonus (more evidence = more reliable)
-    score += len(candidate.evidence) * 0.02
+    # Evidence count bonus (capped)
+    score += min(len(candidate.evidence), EVIDENCE_CAP) * EVIDENCE_WEIGHT
 
     return max(0.0, min(1.0, score))
 
@@ -60,9 +77,15 @@ def rank_candidates(
 
 def _sort_key(
     item: tuple[float, Candidate],
-) -> tuple[float, float, int, str]:
+) -> tuple[float, float, float, int, int]:
     score, candidate = item
-    return (score, candidate.lexicon_freq, len(candidate.evidence), candidate.text)
+    return (
+        score,
+        candidate.word_freq or 0.0,
+        candidate.syllable_freq or 0.0,
+        len(candidate.evidence),
+        -(candidate.edit_distance or 999),
+    )
 
 
 __all__ = ["compute_prior_score", "rank_candidates"]

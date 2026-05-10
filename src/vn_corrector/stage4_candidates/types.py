@@ -66,10 +66,13 @@ class Candidate:
     sources: set[CandidateSource]
     evidence: list[CandidateEvidence]
     prior_score: float = 0.0
-    lexicon_freq: float = 0.0
     edit_distance: int | None = None
     is_original: bool = False
     replacement_token_count: int = 1
+
+    is_known_word: bool = False
+    syllable_freq: float | None = None
+    word_freq: float | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +158,10 @@ class CandidateProposal:
     evidence: CandidateEvidence
     prior_score: float = 0.0
     edit_distance: int | None = None
-    lexicon_freq: float = 0.0
+
+    is_known_word: bool = False
+    syllable_freq: float | None = None
+    word_freq: float | None = None
 
     def __post_init__(self) -> None:
         if not self.text:

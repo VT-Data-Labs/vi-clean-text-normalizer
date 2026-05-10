@@ -75,6 +75,8 @@ class WordLexiconSource(CandidateSourceGenerator):
                     },
                 ),
                 prior_score=prior_weight + freq_val * 0.3,
+                is_known_word=True,
+                word_freq=freq_val,
             )
 
 

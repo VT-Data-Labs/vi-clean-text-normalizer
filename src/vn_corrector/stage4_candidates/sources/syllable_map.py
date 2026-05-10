@@ -57,7 +57,7 @@ class SyllableMapSource(CandidateSourceGenerator):
                 ),
                 prior_score=prior_weight + freq_val * 0.2,
                 edit_distance=_levenshtein(request.token_text, entry.surface),
-                lexicon_freq=freq_val,
+                syllable_freq=freq_val,
             )
 
 
