@@ -251,6 +251,13 @@ pytest
 - Offset-based reconstruction, overlap resolution, fail-closed safety
 - CLI delegates to pipeline
 
+### ✅ M6.1 — Phrase-Span Lattice Decoder
+- Safety-gated phrase-span proposer (`PhraseSpanProposer`)
+- Viterbi decoder (`LatticeDecoder`) over word-position lattice edges
+- Phrase-edge scoring with length bonus and risk adjustment
+- Safe-restoration gate (accentless → accented only; minimum phrase length and confidence)
+- Integration with candidate generation and scoring pipelines
+
 ### ✅ M7 — Evaluation Harness
 - Gold test set format (JSONL)
 - CER / WER / precision / recall / overcorrection rate

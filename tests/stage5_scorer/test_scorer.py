@@ -62,6 +62,11 @@ class FakeLexicon(LexiconStoreInterface):
         "quan",
         "quân",
         "quận",
+        "niêm",
+        "niềm",
+        "tin",
+        "thịnh",
+        "vượng",
     }
 
     _NO_TONE_MAP: ClassVar[dict[str, list[str]]] = {
@@ -138,6 +143,7 @@ class FakeNgramStore(JsonNgramStore):
             "thoại liên": 0.85,
             "liên hệ": 0.98,
             "chính chủ": 0.95,
+            "niềm tin": 0.98,
         }
         self._trigrams = {
             "số muỗng gạt": 0.9,
@@ -477,4 +483,93 @@ class TestPhraseScorer:
         assert corrected_seq.breakdown.overcorrection_penalty == 0.0, (
             f"Expected 0.0 overcorrection penalty for accentless→accented "
             f"correction, got {corrected_seq.breakdown.overcorrection_penalty}"
+        )
+
+    def test_known_word_change_exempted_when_candidate_forms_strong_bigram(
+        self,
+        scorer: PhraseScorer,
+    ) -> None:
+        """``niêm`` is a known word, but changing it to ``niềm`` before ``tin``
+        should NOT incur overcorrection penalty because ``niềm tin`` is a
+        strong known bigram (0.98) while ``niêm tin`` is not (0.0).
+        """
+        tcs = [
+            _make_tc(
+                "niêm",
+                [
+                    ("niêm", True, 0, CandidateSource.ORIGINAL),
+                    ("niềm", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+            _make_tc(
+                "tin",
+                [("tin", True, 0, CandidateSource.ORIGINAL)],
+            ),
+        ]
+        windows = build_windows(tcs)
+        result = scorer.score_window(windows[0])
+        corrected_seq = next(
+            s for s in result.ranked_sequences if " ".join(s.sequence.tokens) == "niềm tin"
+        )
+        identity_seq = next(
+            s for s in result.ranked_sequences if " ".join(s.sequence.tokens) == "niêm tin"
+        )
+        assert corrected_seq.score > identity_seq.score, (
+            f"Expected niềm tin (score={corrected_seq.score:.4f}) to outrank "
+            f"niêm tin (score={identity_seq.score:.4f}) when bigram evidence exists"
+        )
+        assert corrected_seq.breakdown.overcorrection_penalty == 0.0, (
+            f"Expected 0.0 overcorrection penalty for known-word change that "
+            f"forms a strong bigram, got "
+            f"{corrected_seq.breakdown.overcorrection_penalty}"
+        )
+
+    def test_known_word_change_still_penalized_without_ngram_improvement(
+        self,
+        scorer: PhraseScorer,
+    ) -> None:
+        """Changing a known word to another known word without strong n-gram
+        improvement should still incur the overcorrection penalty.
+        """
+        tcs = [
+            _make_tc(
+                "niêm",
+                [
+                    ("niêm", True, 0, CandidateSource.ORIGINAL),
+                    ("niềm", False, 1, CandidateSource.SYLLABLE_MAP),
+                ],
+            ),
+        ]
+        windows = build_windows(tcs)
+        result = scorer.score_window(windows[0])
+        corrected_seq = next(
+            s for s in result.ranked_sequences if " ".join(s.sequence.tokens) == "niềm"
+        )
+        assert corrected_seq.breakdown.overcorrection_penalty > 0.0, (
+            "Expected non-zero overcorrection penalty for isolated known-word "
+            f"change without n-gram context, got "
+            f"{corrected_seq.breakdown.overcorrection_penalty}"
+        )
+
+    def test_weak_ngram_improvement_does_not_exempt_overcorrection(
+        self,
+    ) -> None:
+        """A candidate whose bigram score is above the original but below the
+        ``min_score`` (0.5) or ``min_delta`` (0.2) thresholds should NOT be
+        exempted from the overcorrection penalty.
+        """
+        from vn_corrector.stage5_scorer.scorer import _candidate_improves_ngram
+
+        result = _candidate_improves_ngram(
+            candidate="niềm",
+            original="niêm",
+            original_tokens=("niêm", "tin"),
+            idx=0,
+            ngram_store=FakeNgramStore(),
+            min_score=0.99,
+            min_delta=0.2,
+        )
+        assert not result, (
+            "Expected no n-gram improvement exemption when min_score=0.99 "
+            "exceeds the actual bigram score (0.98)"
         )

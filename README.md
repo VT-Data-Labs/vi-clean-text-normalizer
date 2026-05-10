@@ -138,7 +138,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for full API documentation and architecture
 
 ## Project Status
 
-> **Status:** Milestone 7 complete — evaluating with CER/WER/precision/recall.
+> **Status:** Milestone 7 complete — evaluating with CER/WER/precision/recall. Phrase-span lattice decoder (M6.1) released.
 
 - [x] Unicode normalization & case masking
 - [x] Tokenization with roundtrip guarantee
@@ -146,8 +146,9 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for full API documentation and architecture
 - [x] Pluggable lexicon store (JSON / SQLite / Hybrid)
 - [x] Candidate generation (8 source generators)
 - [x] N-gram phrase scoring with context-aware windowing
+- [x] **Phrase-span lattice decoder** — Viterbi decoder for safe no-tone Vietnamese restoration (M6.1)
 - [x] Decision engine with confidence thresholds and flags
-- [x] Evaluation harness
+- [x] Evaluation harness (CER / WER / precision / recall / overcorrection rate)
 - [x] **Full correction pipeline** (M6.5)
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the detailed milestone roadmap.

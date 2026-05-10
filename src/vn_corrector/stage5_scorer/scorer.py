@@ -56,6 +56,68 @@ def _is_accentless_variant_correction(
     )
 
 
+def _candidate_improves_ngram(
+    candidate: str,
+    original: str,
+    original_tokens: tuple[str, ...],
+    idx: int,
+    ngram_store: NgramStore,
+    *,
+    min_score: float = 0.5,
+    min_delta: float = 0.2,
+) -> bool:
+    """Check if *candidate* has stronger local n-gram evidence than *original*.
+
+    Looks at the immediate left and right **content** bigram contexts
+    (skipping whitespace tokens, matching how
+    :meth:`PhraseScorer._score_phrase_ngram` builds its content sequence).
+    Returns ``True`` when **any** adjacent bigram for *candidate* meets all
+    of:
+
+    1. The candidate bigram score ≥ *min_score*.
+    2. The candidate bigram score exceeds the original bigram score by at
+       least *min_delta*.
+
+    This prevents the overcorrection penalty from blocking legitimate
+    context-aware corrections like ``niêm → niềm`` before ``tin`` (where
+    *niềm tin* is a known phrase) while still protecting real overcorrections
+    on weak/noisy n-gram evidence.
+    """
+    # Build content-token indices (skip whitespace)
+    content_indices = [i for i, t in enumerate(original_tokens) if t.strip()]
+    try:
+        pos = content_indices.index(idx)
+    except ValueError:
+        return False
+
+    checks: list[tuple[float, float]] = []
+
+    if pos > 0:
+        left_idx = content_indices[pos - 1]
+        left = original_tokens[left_idx]
+        checks.append(
+            (
+                ngram_store.bigram_score(left, original),
+                ngram_store.bigram_score(left, candidate),
+            )
+        )
+
+    if pos < len(content_indices) - 1:
+        right_idx = content_indices[pos + 1]
+        right = original_tokens[right_idx]
+        checks.append(
+            (
+                ngram_store.bigram_score(original, right),
+                ngram_store.bigram_score(candidate, right),
+            )
+        )
+
+    return any(
+        cand_score >= min_score and cand_score >= orig_score + min_delta
+        for orig_score, cand_score in checks
+    )
+
+
 class PhraseScorer:
     """Score candidate sequences inside a window using multiple signals."""
 
@@ -213,14 +275,23 @@ class PhraseScorer:
     ) -> float:
         penalized_changes = 0
         total = 0
-        for token, orig in zip(tokens, original_tokens, strict=False):
+        for i, (token, orig) in enumerate(zip(tokens, original_tokens, strict=False)):
             if token == orig:
                 continue
             total += 1
-            if self._lexicon.contains_word(orig) and not _is_accentless_variant_correction(
-                orig, token, self._lexicon
+            if not self._lexicon.contains_word(orig):
+                continue
+            if _is_accentless_variant_correction(orig, token, self._lexicon):
+                continue
+            if _candidate_improves_ngram(
+                token,
+                orig,
+                original_tokens,
+                i,
+                self._ngram_store,
             ):
-                penalized_changes += 1
+                continue
+            penalized_changes += 1
         if total == 0:
             return 0.0
         return penalized_changes / total
